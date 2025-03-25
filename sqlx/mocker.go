@@ -84,7 +84,7 @@ type MockerCaller struct {
 	Shoulder xmap.Shoulder
 }
 
-func (m *MockerCaller) Should(t *testing.T, args ...interface{}) *MockerCaller {
+func (m *MockerCaller) Should(t *testing.T, args ...any) *MockerCaller {
 	m.Shoulder.Should(t, args...)
 	return m
 }
@@ -99,7 +99,7 @@ func (m *MockerCaller) OnlyLog(only bool) *MockerCaller {
 	return m
 }
 
-func Should(t *testing.T, key string, v interface{}) (caller *MockerCaller) {
+func Should(t *testing.T, key string, v any) (caller *MockerCaller) {
 	caller = &MockerCaller{}
 	caller.Should(t, key, v).Call = func(call func(trigger int) (res xmap.M, err error)) xmap.M {
 		res, err := call(0)
@@ -109,7 +109,7 @@ func Should(t *testing.T, key string, v interface{}) (caller *MockerCaller) {
 	return
 }
 
-func rangeArgs(args []interface{}, call func(key string, trigger int)) {
+func rangeArgs(args []any, call func(key string, trigger int)) {
 	triggerAll := map[string][]int{}
 	triggerKeys := []string{}
 	triggerAdd := false
@@ -153,7 +153,7 @@ func MockerMatchPanic(key, match string) {
 	mockerSet(key, match, true)
 }
 
-func MockerSetCall(args ...interface{}) (caller *MockerCaller) {
+func MockerSetCall(args ...any) (caller *MockerCaller) {
 	caller = &MockerCaller{}
 	caller.Call = func(call func(trigger int) (res xmap.M, err error)) xmap.M {
 		rangeArgs(args, func(key string, i int) {
@@ -167,7 +167,7 @@ func MockerSetCall(args ...interface{}) (caller *MockerCaller) {
 	return
 }
 
-func MockerPanicCall(args ...interface{}) (caller *MockerCaller) {
+func MockerPanicCall(args ...any) (caller *MockerCaller) {
 	caller = &MockerCaller{}
 	caller.Call = func(call func(trigger int) (res xmap.M, err error)) xmap.M {
 		rangeArgs(args, func(key string, i int) {

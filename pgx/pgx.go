@@ -32,7 +32,7 @@ type Row struct {
 	pgx.Row
 }
 
-func (r Row) Scan(dest ...interface{}) (err error) {
+func (r Row) Scan(dest ...any) (err error) {
 	defer func() {
 		xerr := r.Row.Scan(dest...)
 		if err == nil {
@@ -48,14 +48,14 @@ type Rows struct {
 	pgx.Rows
 }
 
-func (r *Rows) Scan(dest ...interface{}) error {
+func (r *Rows) Scan(dest ...any) error {
 	if err := mockerCheck("Rows.Scan", r.SQL); err != nil {
 		return err
 	}
 	return r.Rows.Scan(dest...)
 }
 
-func (r *Rows) Values() ([]interface{}, error) {
+func (r *Rows) Values() ([]any, error) {
 	if err := mockerCheck("Rows.Values", r.SQL); err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (t *Tx) Prepare(ctx context.Context, name, sql string) (*pgconn.StatementDe
 	return t.Tx.Prepare(ctx, name, sql)
 }
 
-func (t *Tx) Exec(ctx context.Context, sql string, args ...interface{}) (insertId, affected int64, err error) {
+func (t *Tx) Exec(ctx context.Context, sql string, args ...any) (insertId, affected int64, err error) {
 	if err := mockerCheck("Tx.Exec", sql); err != nil {
 		return 0, 0, err
 	}
@@ -163,7 +163,7 @@ func (t *Tx) Exec(ctx context.Context, sql string, args ...interface{}) (insertI
 	return
 }
 
-func (t *Tx) ExecRow(ctx context.Context, sql string, args ...interface{}) (insertId int64, err error) {
+func (t *Tx) ExecRow(ctx context.Context, sql string, args ...any) (insertId int64, err error) {
 	if err := mockerCheck("Tx.Exec", sql); err != nil {
 		return 0, err
 	}
@@ -174,7 +174,7 @@ func (t *Tx) ExecRow(ctx context.Context, sql string, args ...interface{}) (inse
 	return
 }
 
-func (t *Tx) Query(ctx context.Context, sql string, args ...interface{}) (rows crud.Rows, err error) {
+func (t *Tx) Query(ctx context.Context, sql string, args ...any) (rows crud.Rows, err error) {
 	if err := mockerCheck("Tx.Query", sql); err != nil {
 		return nil, err
 	}
@@ -185,14 +185,14 @@ func (t *Tx) Query(ctx context.Context, sql string, args ...interface{}) (rows c
 	return
 }
 
-func (t *Tx) QueryRow(ctx context.Context, sql string, args ...interface{}) crud.Row {
+func (t *Tx) QueryRow(ctx context.Context, sql string, args ...any) crud.Row {
 	return &Row{
 		SQL: sql,
 		Row: t.Tx.QueryRow(ctx, sql, args...),
 	}
 }
 
-func (t *Tx) CrudExec(ctx context.Context, sql string, args ...interface{}) (insertId, affected int64, err error) {
+func (t *Tx) CrudExec(ctx context.Context, sql string, args ...any) (insertId, affected int64, err error) {
 	if err := mockerCheck("Tx.Exec", sql); err != nil {
 		return 0, 0, err
 	}
@@ -200,7 +200,7 @@ func (t *Tx) CrudExec(ctx context.Context, sql string, args ...interface{}) (ins
 	return
 }
 
-func (t *Tx) CrudExecRow(ctx context.Context, sql string, args ...interface{}) (insertId int64, err error) {
+func (t *Tx) CrudExecRow(ctx context.Context, sql string, args ...any) (insertId int64, err error) {
 	if err := mockerCheck("Tx.Exec", sql); err != nil {
 		return 0, err
 	}
@@ -208,7 +208,7 @@ func (t *Tx) CrudExecRow(ctx context.Context, sql string, args ...interface{}) (
 	return
 }
 
-func (t *Tx) CrudQuery(ctx context.Context, sql string, args ...interface{}) (rows crud.Rows, err error) {
+func (t *Tx) CrudQuery(ctx context.Context, sql string, args ...any) (rows crud.Rows, err error) {
 	if err := mockerCheck("Tx.Query", sql); err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (t *Tx) CrudQuery(ctx context.Context, sql string, args ...interface{}) (ro
 	return
 }
 
-func (t *Tx) CrudQueryRow(ctx context.Context, sql string, args ...interface{}) (row crud.Row) {
+func (t *Tx) CrudQueryRow(ctx context.Context, sql string, args ...any) (row crud.Row) {
 	row = t.QueryRow(ctx, sql, args...)
 	return
 }
@@ -230,7 +230,7 @@ func NewPgQueryer(pool *pgxpool.Pool) (queryer *PgQueryer) {
 	return
 }
 
-func (p *PgQueryer) Exec(ctx context.Context, sql string, args ...interface{}) (insertId, affected int64, err error) {
+func (p *PgQueryer) Exec(ctx context.Context, sql string, args ...any) (insertId, affected int64, err error) {
 	if err := mockerCheck("Pool.Exec", sql); err != nil {
 		return 0, 0, err
 	}
@@ -241,7 +241,7 @@ func (p *PgQueryer) Exec(ctx context.Context, sql string, args ...interface{}) (
 	return
 }
 
-func (p *PgQueryer) ExecRow(ctx context.Context, sql string, args ...interface{}) (insertId int64, err error) {
+func (p *PgQueryer) ExecRow(ctx context.Context, sql string, args ...any) (insertId int64, err error) {
 	if err := mockerCheck("Pool.Exec", sql); err != nil {
 		return 0, err
 	}
@@ -252,7 +252,7 @@ func (p *PgQueryer) ExecRow(ctx context.Context, sql string, args ...interface{}
 	return
 }
 
-func (p *PgQueryer) Query(ctx context.Context, sql string, args ...interface{}) (rows crud.Rows, err error) {
+func (p *PgQueryer) Query(ctx context.Context, sql string, args ...any) (rows crud.Rows, err error) {
 	if err := mockerCheck("Pool.Query", sql); err != nil {
 		return nil, err
 	}
@@ -263,14 +263,14 @@ func (p *PgQueryer) Query(ctx context.Context, sql string, args ...interface{}) 
 	return
 }
 
-func (p *PgQueryer) QueryRow(ctx context.Context, sql string, args ...interface{}) crud.Row {
+func (p *PgQueryer) QueryRow(ctx context.Context, sql string, args ...any) crud.Row {
 	return &Row{
 		SQL: sql,
 		Row: p.Pool.QueryRow(ctx, sql, args...),
 	}
 }
 
-func (p *PgQueryer) CrudExec(ctx context.Context, sql string, args ...interface{}) (insertId, affected int64, err error) {
+func (p *PgQueryer) CrudExec(ctx context.Context, sql string, args ...any) (insertId, affected int64, err error) {
 	if err := mockerCheck("Pool.Exec", sql); err != nil {
 		return 0, 0, err
 	}
@@ -278,7 +278,7 @@ func (p *PgQueryer) CrudExec(ctx context.Context, sql string, args ...interface{
 	return
 }
 
-func (p *PgQueryer) CrudExecRow(ctx context.Context, sql string, args ...interface{}) (insertId int64, err error) {
+func (p *PgQueryer) CrudExecRow(ctx context.Context, sql string, args ...any) (insertId int64, err error) {
 	if err := mockerCheck("Pool.Exec", sql); err != nil {
 		return 0, err
 	}
@@ -286,7 +286,7 @@ func (p *PgQueryer) CrudExecRow(ctx context.Context, sql string, args ...interfa
 	return
 }
 
-func (p *PgQueryer) CrudQuery(ctx context.Context, sql string, args ...interface{}) (rows crud.Rows, err error) {
+func (p *PgQueryer) CrudQuery(ctx context.Context, sql string, args ...any) (rows crud.Rows, err error) {
 	if err := mockerCheck("Pool.Query", sql); err != nil {
 		return nil, err
 	}
@@ -294,7 +294,7 @@ func (p *PgQueryer) CrudQuery(ctx context.Context, sql string, args ...interface
 	return
 }
 
-func (p *PgQueryer) CrudQueryRow(ctx context.Context, sql string, args ...interface{}) (row crud.Row) {
+func (p *PgQueryer) CrudQueryRow(ctx context.Context, sql string, args ...any) (row crud.Row) {
 	row = p.QueryRow(ctx, sql, args...)
 	return
 }
@@ -323,19 +323,19 @@ func (p *PgQueryer) Begin(ctx context.Context) (tx *Tx, err error) {
 	return
 }
 
-func Exec(ctx context.Context, sql string, args ...interface{}) (insertId, affected int64, err error) {
+func Exec(ctx context.Context, sql string, args ...any) (insertId, affected int64, err error) {
 	return Shared.Exec(ctx, sql, args...)
 }
 
-func ExecRow(ctx context.Context, sql string, args ...interface{}) (insertId int64, err error) {
+func ExecRow(ctx context.Context, sql string, args ...any) (insertId int64, err error) {
 	return Shared.ExecRow(ctx, sql, args...)
 }
 
-func QueryRow(ctx context.Context, sql string, args ...interface{}) crud.Row {
+func QueryRow(ctx context.Context, sql string, args ...any) crud.Row {
 	return Shared.QueryRow(ctx, sql, args...)
 }
 
-func Query(ctx context.Context, sql string, args ...interface{}) (rows crud.Rows, err error) {
+func Query(ctx context.Context, sql string, args ...any) (rows crud.Rows, err error) {
 	return Shared.Query(ctx, sql, args...)
 }
 

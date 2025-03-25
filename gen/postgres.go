@@ -101,7 +101,7 @@ func NameConvPG(on, name string, field reflect.StructField) string {
 	}
 }
 
-func ParmConvPG(on, fieldName, fieldFunc string, field reflect.StructField, value interface{}) interface{} {
+func ParmConvPG(on, fieldName, fieldFunc string, field reflect.StructField, value any) any {
 	if c, ok := value.(xsql.ArrayConverter); on == "where" && ok {
 		return c.DbArray()
 	}

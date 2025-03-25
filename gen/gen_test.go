@@ -3,7 +3,6 @@ package gen
 import (
 	"context"
 	"database/sql"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -153,7 +152,7 @@ func TestPgGen(t *testing.T) {
 		}
 	}()
 	os.MkdirAll(PgGen.Out, os.ModePerm)
-	ioutil.WriteFile(filepath.Join(PgGen.Out, "auto_test.go"), []byte(PgInit), os.ModePerm)
+	os.WriteFile(filepath.Join(PgGen.Out, "auto_test.go"), []byte(PgInit), os.ModePerm)
 	err = PgGen.Generate()
 	if err != nil {
 		t.Error(err)
@@ -294,7 +293,7 @@ func TestSqliteGen(t *testing.T) {
 		}
 	}()
 	os.MkdirAll(PgGen.Out, os.ModePerm)
-	ioutil.WriteFile(filepath.Join(SqliteGen.Out, "auto_test.go"), []byte(SqliteInit), os.ModePerm)
+	os.WriteFile(filepath.Join(SqliteGen.Out, "auto_test.go"), []byte(SqliteInit), os.ModePerm)
 	err = SqliteGen.Generate()
 	if err != nil {
 		t.Error(err)

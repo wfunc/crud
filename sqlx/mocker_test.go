@@ -7,7 +7,7 @@ import (
 )
 
 func TestRangeArgs(t *testing.T) {
-	rangeArgs([]interface{}{"a", 1, 2}, func(key string, trigger int) {
+	rangeArgs([]any{"a", 1, 2}, func(key string, trigger int) {
 		if key != "a" {
 			panic(key)
 		}
@@ -15,7 +15,7 @@ func TestRangeArgs(t *testing.T) {
 			panic(trigger)
 		}
 	})
-	rangeArgs([]interface{}{"a", 1, 2, "b", 3}, func(key string, trigger int) {
+	rangeArgs([]any{"a", 1, 2, "b", 3}, func(key string, trigger int) {
 		if key != "a" && key != "b" {
 			panic(key)
 		}

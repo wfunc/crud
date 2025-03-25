@@ -50,7 +50,7 @@ func NameConvSQLITE(on, name string, field reflect.StructField) string {
 	return name
 }
 
-func ParmConvSQLITE(on, fieldName, fieldFunc string, field reflect.StructField, value interface{}) interface{} {
+func ParmConvSQLITE(on, fieldName, fieldFunc string, field reflect.StructField, value any) any {
 	if c, ok := value.(xsql.ArrayConverter); on == "where" && ok {
 		return c.InArray()
 	}

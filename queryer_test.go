@@ -59,7 +59,7 @@ func (d *TestDbQueryer) getErrNoRows() (err error) {
 	return
 }
 
-func (d *TestDbQueryer) Exec(ctx context.Context, query string, args ...interface{}) (insertId, affected int64, err error) {
+func (d *TestDbQueryer) Exec(ctx context.Context, query string, args ...any) (insertId, affected int64, err error) {
 	res, err := d.DB.ExecContext(ctx, query, args...)
 	if err == nil {
 		insertId, _ = res.LastInsertId() //ignore error for some driver is not supported
@@ -70,7 +70,7 @@ func (d *TestDbQueryer) Exec(ctx context.Context, query string, args ...interfac
 	return
 }
 
-func (d *TestDbQueryer) ExecRow(ctx context.Context, query string, args ...interface{}) (insertId int64, err error) {
+func (d *TestDbQueryer) ExecRow(ctx context.Context, query string, args ...any) (insertId int64, err error) {
 	insertId, affected, err := d.Exec(ctx, query, args...)
 	if err == nil && affected < 1 {
 		err = d.getErrNoRows()
@@ -78,12 +78,12 @@ func (d *TestDbQueryer) ExecRow(ctx context.Context, query string, args ...inter
 	return
 }
 
-func (d *TestDbQueryer) Query(ctx context.Context, query string, args ...interface{}) (rows Rows, err error) {
+func (d *TestDbQueryer) Query(ctx context.Context, query string, args ...any) (rows Rows, err error) {
 	rows, err = d.DB.QueryContext(ctx, query, args...)
 	return
 }
 
-func (d *TestDbQueryer) QueryRow(ctx context.Context, query string, args ...interface{}) (row Row) {
+func (d *TestDbQueryer) QueryRow(ctx context.Context, query string, args ...any) (row Row) {
 	row = d.DB.QueryRowContext(ctx, query, args...)
 	return
 }
@@ -92,19 +92,19 @@ type TestCrudQueryer struct {
 	Queryer Queryer
 }
 
-func (t *TestCrudQueryer) CrudExec(ctx context.Context, query string, args ...interface{}) (insertId, affected int64, err error) {
+func (t *TestCrudQueryer) CrudExec(ctx context.Context, query string, args ...any) (insertId, affected int64, err error) {
 	insertId, affected, err = t.Queryer.Exec(ctx, query, args...)
 	return
 }
-func (t *TestCrudQueryer) CrudExecRow(ctx context.Context, query string, args ...interface{}) (insertId int64, err error) {
+func (t *TestCrudQueryer) CrudExecRow(ctx context.Context, query string, args ...any) (insertId int64, err error) {
 	insertId, err = t.Queryer.ExecRow(ctx, query, args...)
 	return
 }
-func (t *TestCrudQueryer) CrudQuery(ctx context.Context, query string, args ...interface{}) (rows Rows, err error) {
+func (t *TestCrudQueryer) CrudQuery(ctx context.Context, query string, args ...any) (rows Rows, err error) {
 	rows, err = t.Queryer.Query(ctx, query, args...)
 	return
 }
-func (t *TestCrudQueryer) CrudQueryRow(ctx context.Context, query string, args ...interface{}) (row Row) {
+func (t *TestCrudQueryer) CrudQueryRow(ctx context.Context, query string, args ...any) (row Row) {
 	row = t.Queryer.QueryRow(ctx, query, args...)
 	return
 }

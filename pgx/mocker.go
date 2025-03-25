@@ -112,7 +112,7 @@ func NewMockerCaller() (caller *MockerCaller) {
 	return
 }
 
-func (m *MockerCaller) Should(t *testing.T, args ...interface{}) *MockerCaller {
+func (m *MockerCaller) Should(t *testing.T, args ...any) *MockerCaller {
 	m.Shoulder.Should(t, args...)
 	return m
 }
@@ -127,8 +127,8 @@ func (m *MockerCaller) OnlyLog(only bool) *MockerCaller {
 	return m
 }
 
-//GetMap will get map from remote
-func (m *MockerCaller) GetMap(format string, args ...interface{}) (data xmap.M, err error) {
+// GetMap will get map from remote
+func (m *MockerCaller) GetMap(format string, args ...any) (data xmap.M, err error) {
 	m.calld(1, func(trigger int) (xmap.M, error) {
 		data, err = m.Client.GetMap(format, args...)
 		return data, err
@@ -136,8 +136,8 @@ func (m *MockerCaller) GetMap(format string, args ...interface{}) (data xmap.M, 
 	return
 }
 
-//GetHeaderMap will get map from remote
-func (m *MockerCaller) GetHeaderMap(header xmap.M, format string, args ...interface{}) (data xmap.M, res *http.Response, err error) {
+// GetHeaderMap will get map from remote
+func (m *MockerCaller) GetHeaderMap(header xmap.M, format string, args ...any) (data xmap.M, res *http.Response, err error) {
 	m.calld(1, func(trigger int) (xmap.M, error) {
 		data, res, err = m.Client.GetHeaderMap(header, format, args...)
 		return data, err
@@ -145,8 +145,8 @@ func (m *MockerCaller) GetHeaderMap(header xmap.M, format string, args ...interf
 	return
 }
 
-//PostMap will get map from remote
-func (m *MockerCaller) PostMap(body io.Reader, format string, args ...interface{}) (data xmap.M, err error) {
+// PostMap will get map from remote
+func (m *MockerCaller) PostMap(body io.Reader, format string, args ...any) (data xmap.M, err error) {
 	m.calld(1, func(trigger int) (xmap.M, error) {
 		data, err = m.Client.PostMap(body, format, args...)
 		return data, err
@@ -154,8 +154,8 @@ func (m *MockerCaller) PostMap(body io.Reader, format string, args ...interface{
 	return
 }
 
-//PostTypeMap will get map from remote
-func (m *MockerCaller) PostTypeMap(contentType string, body io.Reader, format string, args ...interface{}) (data xmap.M, err error) {
+// PostTypeMap will get map from remote
+func (m *MockerCaller) PostTypeMap(contentType string, body io.Reader, format string, args ...any) (data xmap.M, err error) {
 	m.calld(1, func(trigger int) (xmap.M, error) {
 		data, err = m.Client.PostTypeMap(contentType, body, format, args...)
 		return data, err
@@ -163,8 +163,8 @@ func (m *MockerCaller) PostTypeMap(contentType string, body io.Reader, format st
 	return
 }
 
-//PostHeaderMap will get map from remote
-func (m *MockerCaller) PostHeaderMap(header xmap.M, body io.Reader, format string, args ...interface{}) (data xmap.M, res *http.Response, err error) {
+// PostHeaderMap will get map from remote
+func (m *MockerCaller) PostHeaderMap(header xmap.M, body io.Reader, format string, args ...any) (data xmap.M, res *http.Response, err error) {
 	m.calld(1, func(trigger int) (xmap.M, error) {
 		data, res, err = m.Client.PostHeaderMap(header, body, format, args...)
 		return data, err
@@ -172,8 +172,8 @@ func (m *MockerCaller) PostHeaderMap(header xmap.M, body io.Reader, format strin
 	return
 }
 
-//PostJSONMap will get map from remote
-func (m *MockerCaller) PostJSONMap(body interface{}, format string, args ...interface{}) (data xmap.M, err error) {
+// PostJSONMap will get map from remote
+func (m *MockerCaller) PostJSONMap(body any, format string, args ...any) (data xmap.M, err error) {
 	m.calld(1, func(trigger int) (xmap.M, error) {
 		data, err = m.Client.PostJSONMap(body, format, args...)
 		return data, err
@@ -181,8 +181,8 @@ func (m *MockerCaller) PostJSONMap(body interface{}, format string, args ...inte
 	return
 }
 
-//MethodBytes will do http request, read reponse and parse to map
-func (m *MockerCaller) MethodMap(method string, header xmap.M, body io.Reader, format string, args ...interface{}) (data xmap.M, res *http.Response, err error) {
+// MethodBytes will do http request, read reponse and parse to map
+func (m *MockerCaller) MethodMap(method string, header xmap.M, body io.Reader, format string, args ...any) (data xmap.M, res *http.Response, err error) {
 	m.calld(1, func(trigger int) (xmap.M, error) {
 		data, res, err = m.Client.MethodMap(method, header, body, format, args...)
 		return data, err
@@ -190,8 +190,8 @@ func (m *MockerCaller) MethodMap(method string, header xmap.M, body io.Reader, f
 	return
 }
 
-//PostFormMap will get map from remote
-func (m *MockerCaller) PostFormMap(form xmap.M, format string, args ...interface{}) (data xmap.M, err error) {
+// PostFormMap will get map from remote
+func (m *MockerCaller) PostFormMap(form xmap.M, format string, args ...any) (data xmap.M, err error) {
 	m.calld(1, func(trigger int) (xmap.M, error) {
 		data, err = m.Client.PostFormMap(form, format, args...)
 		return data, err
@@ -199,8 +199,8 @@ func (m *MockerCaller) PostFormMap(form xmap.M, format string, args ...interface
 	return
 }
 
-//PostMultipartMap will get map from remote
-func (m *MockerCaller) PostMultipartMap(header, fields xmap.M, format string, args ...interface{}) (data xmap.M, err error) {
+// PostMultipartMap will get map from remote
+func (m *MockerCaller) PostMultipartMap(header, fields xmap.M, format string, args ...any) (data xmap.M, err error) {
 	m.calld(1, func(trigger int) (xmap.M, error) {
 		data, err = m.Client.PostMultipartMap(header, fields, format, args...)
 		return data, err
@@ -208,8 +208,8 @@ func (m *MockerCaller) PostMultipartMap(header, fields xmap.M, format string, ar
 	return
 }
 
-//UploadMap will get map from remote
-func (m *MockerCaller) UploadMap(fields xmap.M, filekey, filename, format string, args ...interface{}) (data xmap.M, err error) {
+// UploadMap will get map from remote
+func (m *MockerCaller) UploadMap(fields xmap.M, filekey, filename, format string, args ...any) (data xmap.M, err error) {
 	m.calld(1, func(trigger int) (xmap.M, error) {
 		data, err = m.Client.UploadMap(fields, filekey, filename, format, args...)
 		return data, err
@@ -217,7 +217,7 @@ func (m *MockerCaller) UploadMap(fields xmap.M, filekey, filename, format string
 	return
 }
 
-func Should(t *testing.T, args ...interface{}) (caller *MockerCaller) {
+func Should(t *testing.T, args ...any) (caller *MockerCaller) {
 	caller = NewMockerCaller()
 	caller.calld = func(depth int, call func(trigger int) (res xmap.M, err error)) xmap.M {
 		res, err := call(0)
@@ -237,7 +237,7 @@ func ShouldError(t *testing.T) (caller *MockerCaller) {
 	return caller.ShouldError(t)
 }
 
-func rangeArgs(args []interface{}, call func(key string, trigger int)) {
+func rangeArgs(args []any, call func(key string, trigger int)) {
 	triggerAll := map[string][]int{}
 	triggerKeys := []string{}
 	triggerAdd := false
@@ -265,7 +265,7 @@ func rangeArgs(args []interface{}, call func(key string, trigger int)) {
 	}
 }
 
-func MockerSetCall(args ...interface{}) (caller *MockerCaller) {
+func MockerSetCall(args ...any) (caller *MockerCaller) {
 	caller = NewMockerCaller()
 	caller.calld = func(depth int, call func(trigger int) (res xmap.M, err error)) xmap.M {
 		rangeArgs(args, func(key string, i int) {
@@ -279,7 +279,7 @@ func MockerSetCall(args ...interface{}) (caller *MockerCaller) {
 	return
 }
 
-func MockerPanicCall(args ...interface{}) (caller *MockerCaller) {
+func MockerPanicCall(args ...any) (caller *MockerCaller) {
 	caller = NewMockerCaller()
 	caller.calld = func(depth int, call func(trigger int) (res xmap.M, err error)) xmap.M {
 		rangeArgs(args, func(key string, i int) {

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"go/format"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -40,7 +39,7 @@ func ConvSizeTrim(typeMap map[string][]string, s *Struct, column *Column) (resul
 		types = typeMap["*"]
 	}
 	if len(types) < 1 {
-		result = "interface{}"
+		result = "any"
 	} else if column.NotNull {
 		result = types[0]
 	} else {
@@ -97,8 +96,8 @@ type Table struct {
 	Columns []*Column `json:"columns"`
 }
 
-func Query(queryer interface{}, tableSQL, columnSQL, schema string) (tables []*Table, err error) {
-	tableArg := []interface{}{}
+func Query(queryer any, tableSQL, columnSQL, schema string) (tables []*Table, err error) {
+	tableArg := []any{}
 	if len(schema) > 0 {
 		tableArg = append(tableArg, schema)
 	}
@@ -107,7 +106,7 @@ func Query(queryer interface{}, tableSQL, columnSQL, schema string) (tables []*T
 		return
 	}
 	for _, table := range tables {
-		columnArg := []interface{}{}
+		columnArg := []any{}
 		if len(schema) > 0 {
 			columnArg = append(columnArg, schema)
 		}
@@ -137,7 +136,7 @@ type Field struct {
 	Comment  string
 	Column   *Column
 	Options  []*Option
-	External interface{}
+	External any
 }
 
 type Struct struct {
@@ -145,7 +144,7 @@ type Struct struct {
 	Comment  string
 	Table    *Table
 	Fields   []*Field
-	External interface{}
+	External any
 }
 
 type Gen struct {
@@ -155,7 +154,7 @@ type Gen struct {
 	NameConv   NameConv
 	TypeConv   TypeConv
 	OptionConv OptionConv
-	OnPre      func(*Gen, *Table) interface{}
+	OnPre      func(*Gen, *Table) any
 }
 
 func NewGen(typeMap map[string][]string, tables []*Table) (gen *Gen) {
@@ -198,11 +197,11 @@ func (g *Gen) AsStruct(t *Table) (s *Struct) {
 	return
 }
 
-func (g *Gen) convStruct(t *Table) (data interface{}) {
+func (g *Gen) convStruct(t *Table) (data any) {
 	if g.OnPre != nil {
 		data = g.OnPre(g, t)
 	} else {
-		data = map[string]interface{}{
+		data = map[string]any{
 			"Struct": g.AsStruct(t),
 		}
 	}
@@ -224,7 +223,7 @@ func (g *Gen) JoinOption(options []*Option, key, seq string) string {
 	return strings.Join(values, seq)
 }
 
-func (g *Gen) Generate(writer io.Writer, call func(buffer io.Writer, data interface{}) error) (err error) {
+func (g *Gen) Generate(writer io.Writer, call func(buffer io.Writer, data any) error) (err error) {
 	var source []byte
 	for _, table := range g.Tables {
 		buffer := bytes.NewBuffer(nil)
@@ -280,8 +279,8 @@ type AutoGen struct {
 	TableInclude  xsql.StringArray
 	TableExclude  xsql.StringArray
 	TableNameType string
-	Queryer       interface{}
-	TableQueryer  func(queryer interface{}, tableSQL, columnSQL, schema string) (tables []*Table, err error)
+	Queryer       any
+	TableQueryer  func(queryer any, tableSQL, columnSQL, schema string) (tables []*Table, err error)
 	TableSQL      string
 	ColumnSQL     string
 	Schema        string
@@ -394,7 +393,7 @@ func (g *AutoGen) FieldTags(s *Struct, field *Field) (allTag string) {
 		g.ValidField = map[string]map[string]string{}
 	}
 	var tags []string
-	addTag := func(format string, args ...interface{}) {
+	addTag := func(format string, args ...any) {
 		tags = append(tags, fmt.Sprintf(format, args...))
 	}
 	var fieldOptionalValue = xsql.StringArray{}
@@ -480,7 +479,7 @@ func (g *AutoGen) FieldDefineType(s *Struct, field *Field) (result string) {
 	return
 }
 
-func (g *AutoGen) OnPre(gen *Gen, table *Table) (data interface{}) {
+func (g *AutoGen) OnPre(gen *Gen, table *Table) (data any) {
 	if g.FieldFilter == nil {
 		g.FieldFilter = map[string]map[string]string{}
 	}
@@ -522,7 +521,7 @@ func (g *AutoGen) OnPre(gen *Gen, table *Table) (data interface{}) {
 		column.Comment = comment
 	}
 	s := gen.AsStruct(table)
-	result := map[string]interface{}{
+	result := map[string]any{
 		"TableNameType": g.TableNameType,
 		"Struct":        s,
 		"Code":          g.CodeSlice,
@@ -592,7 +591,7 @@ func (g *AutoGen) OnPre(gen *Gen, table *Table) (data interface{}) {
 			fieldUpdateAll = append(fieldUpdateAll, field)
 		}
 	}
-	result["Filter"] = map[string]interface{}{
+	result["Filter"] = map[string]any{
 		"Optional": fieldOptional,
 		"Required": fieldRequired,
 		"Insert":   fieldInsert,
@@ -602,7 +601,7 @@ func (g *AutoGen) OnPre(gen *Gen, table *Table) (data interface{}) {
 		"Scan":     fieldScan,
 	}
 	arg := strings.ToLower(s.Name[0:1]) + s.Name[1:]
-	result["Arg"] = map[string]interface{}{
+	result["Arg"] = map[string]any{
 		"Name": arg,
 	}
 	{
@@ -645,7 +644,7 @@ func (g *AutoGen) OnPre(gen *Gen, table *Table) (data interface{}) {
 				addReturn = ""
 			}
 		}
-		result["Add"] = map[string]interface{}{
+		result["Add"] = map[string]any{
 			"Defaults": defaults,
 			"Filter":   addFilter,
 			"Return":   addReturn,
@@ -657,7 +656,7 @@ func (g *AutoGen) OnPre(gen *Gen, table *Table) (data interface{}) {
 		if code, ok := g.CodeTestInit[s.Table.Name]; ok {
 			defaults += strings.ReplaceAll(code, "ARG.", arg+".")
 		}
-		result["Test"] = map[string]interface{}{
+		result["Test"] = map[string]any{
 			"Defaults": defaults,
 		}
 	}
@@ -669,7 +668,7 @@ func (g *AutoGen) OnPre(gen *Gen, table *Table) (data interface{}) {
 				break
 			}
 		}
-		result["Update"] = map[string]interface{}{
+		result["Update"] = map[string]any{
 			"UpdateTime": havingUpdateTime,
 			"Fields":     fieldUpdateAll,
 		}
@@ -721,11 +720,11 @@ func (g *AutoGen) Generate() (err error) {
 		`
 		if len(g.GetQueryer) > 0 && g.GetQueryer != "GetQueryer" {
 			g.OutFuncPre += fmt.Sprintf(`
-				var GetQueryer interface{} = func() crud.Queryer { return %v() }
+				var GetQueryer any = func() crud.Queryer { return %v() }
 			`, g.GetQueryer)
 		} else if len(g.GetQueryer) > 0 && g.GetQueryer == "GetQueryer" {
 			g.OutFuncPre += `
-				var GetQueryer interface{} = func() crud.Queryer { panic("get crud queryer is not setted") }
+				var GetQueryer any = func() crud.Queryer { panic("get crud queryer is not setted") }
 			`
 		}
 	}
@@ -753,7 +752,7 @@ func (g *AutoGen) Generate() (err error) {
 		`
 		if len(g.GetQueryer) < 1 {
 			g.OutFuncPre += fmt.Sprintf(`
-				var %v interface{} = func() crud.Queryer {
+				var %v any = func() crud.Queryer {
 					panic("get crud queryer is not setted")
 				}
 			`, "GetQueryer")
@@ -796,7 +795,7 @@ func (g *AutoGen) Generate() (err error) {
 		if len(structFile) < 1 {
 			structFile = "auto_models.go"
 		}
-		err = ioutil.WriteFile(filepath.Join(g.Out, structFile), source, os.ModePerm)
+		err = os.WriteFile(filepath.Join(g.Out, structFile), source, os.ModePerm)
 		if err != nil {
 			return
 		}
@@ -821,7 +820,7 @@ func (g *AutoGen) Generate() (err error) {
 		if len(defineFile) < 1 {
 			defineFile = "auto_define.go"
 		}
-		err = ioutil.WriteFile(filepath.Join(g.Out, defineFile), source, os.ModePerm)
+		err = os.WriteFile(filepath.Join(g.Out, defineFile), source, os.ModePerm)
 		if err != nil {
 			return
 		}
@@ -847,7 +846,7 @@ func (g *AutoGen) Generate() (err error) {
 		if len(funcFile) < 1 {
 			funcFile = "auto_func.go"
 		}
-		err = ioutil.WriteFile(filepath.Join(g.Out, funcFile), source, os.ModePerm)
+		err = os.WriteFile(filepath.Join(g.Out, funcFile), source, os.ModePerm)
 		if err != nil {
 			return
 		}
@@ -873,7 +872,7 @@ func (g *AutoGen) Generate() (err error) {
 		if len(testFile) < 1 {
 			testFile = "auto_func_test.go"
 		}
-		err = ioutil.WriteFile(filepath.Join(g.Out, testFile), source, os.ModePerm)
+		err = os.WriteFile(filepath.Join(g.Out, testFile), source, os.ModePerm)
 		if err != nil {
 			return
 		}

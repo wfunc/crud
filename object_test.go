@@ -19,10 +19,10 @@ const (
 	CrudObjectTypeC CrudObjectType = "3" //test c
 )
 
-//CrudObjectTypeAll is simple type in
+// CrudObjectTypeAll is simple type in
 var CrudObjectTypeAll = CrudObjectTypeArray{CrudObjectTypeA, CrudObjectTypeB, CrudObjectTypeC}
 
-//CrudObjectTypeShow is simple type in
+// CrudObjectTypeShow is simple type in
 var CrudObjectTypeShow = CrudObjectTypeArray{CrudObjectTypeA, CrudObjectTypeB, CrudObjectTypeC}
 
 type CrudObjectStatus int
@@ -34,13 +34,13 @@ const (
 	CrudObjectStatusRemoved  CrudObjectStatus = -1  //
 )
 
-//CrudObjectStatusAll is simple status in
+// CrudObjectStatusAll is simple status in
 var CrudObjectStatusAll = CrudObjectStatusArray{CrudObjectStatusNormal, CrudObjectStatusDisabled, CrudObjectStatusRemoved}
 
-//CrudObjectStatusShow is simple status in
+// CrudObjectStatusShow is simple status in
 var CrudObjectStatusShow = CrudObjectStatusArray{CrudObjectStatusNormal, CrudObjectStatusDisabled}
 
-//CrudObjectOrderbyAll is crud filter
+// CrudObjectOrderbyAll is crud filter
 const CrudObjectOrderbyAll = "type,update_time,create_time"
 
 /*CrudObject  represents crud_object */
@@ -74,8 +74,8 @@ type CrudObject struct {
 	Status       CrudObjectStatus  `json:"status,omitempty" valid:"status,r|i,e:0;"`               /* simple status in, Normal=100, Disabled=200, Removed=-1 */
 }
 
-//EnumValid will valid value by CrudObjectType
-func (o *CrudObjectType) EnumValid(v interface{}) (err error) {
+// EnumValid will valid value by CrudObjectType
+func (o *CrudObjectType) EnumValid(v any) (err error) {
 	var target CrudObjectType
 	targetType := reflect.TypeOf(CrudObjectType(""))
 	targetValue := reflect.ValueOf(v)
@@ -90,8 +90,8 @@ func (o *CrudObjectType) EnumValid(v interface{}) (err error) {
 	return fmt.Errorf("must be in %v", CrudObjectTypeAll)
 }
 
-//EnumValid will valid value by CrudObjectTypeArray
-func (o *CrudObjectTypeArray) EnumValid(v interface{}) (err error) {
+// EnumValid will valid value by CrudObjectTypeArray
+func (o *CrudObjectTypeArray) EnumValid(v any) (err error) {
 	var target CrudObjectType
 	targetType := reflect.TypeOf(CrudObjectType(""))
 	targetValue := reflect.ValueOf(v)
@@ -106,20 +106,20 @@ func (o *CrudObjectTypeArray) EnumValid(v interface{}) (err error) {
 	return fmt.Errorf("must be in %v", CrudObjectTypeAll)
 }
 
-//DbArray will join value to database array
+// DbArray will join value to database array
 func (o CrudObjectTypeArray) DbArray() (res string) {
 	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
 	return
 }
 
-//InArray will join value to database array
+// InArray will join value to database array
 func (o CrudObjectTypeArray) InArray() (res string) {
 	res = "'" + converter.JoinSafe(o, "','", converter.JoinPolicyDefault) + "'"
 	return
 }
 
-//EnumValid will valid value by CrudObjectStatus
-func (o *CrudObjectStatus) EnumValid(v interface{}) (err error) {
+// EnumValid will valid value by CrudObjectStatus
+func (o *CrudObjectStatus) EnumValid(v any) (err error) {
 	var target CrudObjectStatus
 	targetType := reflect.TypeOf(CrudObjectStatus(0))
 	targetValue := reflect.ValueOf(v)
@@ -134,8 +134,8 @@ func (o *CrudObjectStatus) EnumValid(v interface{}) (err error) {
 	return fmt.Errorf("must be in %v", CrudObjectStatusAll)
 }
 
-//EnumValid will valid value by CrudObjectStatusArray
-func (o *CrudObjectStatusArray) EnumValid(v interface{}) (err error) {
+// EnumValid will valid value by CrudObjectStatusArray
+func (o *CrudObjectStatusArray) EnumValid(v any) (err error) {
 	var target CrudObjectStatus
 	targetType := reflect.TypeOf(CrudObjectStatus(0))
 	targetValue := reflect.ValueOf(v)
@@ -150,13 +150,13 @@ func (o *CrudObjectStatusArray) EnumValid(v interface{}) (err error) {
 	return fmt.Errorf("must be in %v", CrudObjectStatusAll)
 }
 
-//DbArray will join value to database array
+// DbArray will join value to database array
 func (o CrudObjectStatusArray) DbArray() (res string) {
 	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
 	return
 }
 
-//InArray will join value to database array
+// InArray will join value to database array
 func (o CrudObjectStatusArray) InArray() (res string) {
 	res = "" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + ""
 	return

@@ -3,7 +3,6 @@ package pgx
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -125,7 +124,7 @@ var PgGen = gen.AutoGen{
 	},
 	TableInclude: xsql.StringArray{},
 	TableExclude: xsql.StringArray{},
-	Queryer:      func() interface{} { return Pool() },
+	Queryer:      func() any { return Pool() },
 	TableSQL:     gen.TableSQLPG,
 	ColumnSQL:    gen.ColumnSQLPG,
 	Schema:       "public",
@@ -138,7 +137,7 @@ var PgGen = gen.AutoGen{
 func TestPgGen(t *testing.T) {
 	defer os.RemoveAll(PgGen.Out)
 	os.MkdirAll(PgGen.Out, os.ModePerm)
-	ioutil.WriteFile(filepath.Join(PgGen.Out, "auto_test.go"), []byte(PgInit), os.ModePerm)
+	os.WriteFile(filepath.Join(PgGen.Out, "auto_test.go"), []byte(PgInit), os.ModePerm)
 	err := PgGen.Generate()
 	if err != nil {
 		t.Error(err)

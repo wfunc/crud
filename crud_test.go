@@ -30,7 +30,7 @@ func init() {
 			return name
 		}
 	}
-	Default.ParmConv = func(on, fieldName, fieldFunc string, field reflect.StructField, value interface{}) interface{} {
+	Default.ParmConv = func(on, fieldName, fieldFunc string, field reflect.StructField, value any) any {
 		if c, ok := value.(xsql.ArrayConverter); on == "where" && ok {
 			return c.DbArray()
 		}
@@ -69,21 +69,21 @@ func testQueryCall(t *testing.T, queryer Queryer) {
 	var err error
 	var rows Rows
 
-	rows, err = Default.queryerQuery(queryer, context.Background(), "select 1", []interface{}{})
+	rows, err = Default.queryerQuery(queryer, context.Background(), "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	rows.Scan(converter.IntPtr(0))
 	rows.Close()
-	rows, err = Default.queryerQuery(&TestCrudQueryer{Queryer: queryer}, context.Background(), "select 1", []interface{}{})
+	rows, err = Default.queryerQuery(&TestCrudQueryer{Queryer: queryer}, context.Background(), "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	rows.Scan(converter.IntPtr(0))
 	rows.Close()
-	rows, err = Default.queryerQuery(func() interface{} { return queryer }, context.Background(), "select 1", []interface{}{})
+	rows, err = Default.queryerQuery(func() any { return queryer }, context.Background(), "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -94,20 +94,20 @@ func testQueryCall(t *testing.T, queryer Queryer) {
 		defer func() {
 			recover()
 		}()
-		Default.queryerQuery("xxx", context.Background(), "select 1", []interface{}{})
+		Default.queryerQuery("xxx", context.Background(), "select 1", []any{})
 	}()
 
-	err = Default.queryerQueryRow(queryer, context.Background(), "select 1", []interface{}{}).Scan(converter.IntPtr(0))
+	err = Default.queryerQueryRow(queryer, context.Background(), "select 1", []any{}).Scan(converter.IntPtr(0))
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = Default.queryerQueryRow(&TestCrudQueryer{Queryer: queryer}, context.Background(), "select 1", []interface{}{}).Scan(converter.IntPtr(0))
+	err = Default.queryerQueryRow(&TestCrudQueryer{Queryer: queryer}, context.Background(), "select 1", []any{}).Scan(converter.IntPtr(0))
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = Default.queryerQueryRow(func() interface{} { return queryer }, context.Background(), "select 1", []interface{}{}).Scan(converter.IntPtr(0))
+	err = Default.queryerQueryRow(func() any { return queryer }, context.Background(), "select 1", []any{}).Scan(converter.IntPtr(0))
 	if err != nil {
 		t.Error(err)
 		return
@@ -116,20 +116,20 @@ func testQueryCall(t *testing.T, queryer Queryer) {
 		defer func() {
 			recover()
 		}()
-		Default.queryerQueryRow("xxx", context.Background(), "select 1", []interface{}{})
+		Default.queryerQueryRow("xxx", context.Background(), "select 1", []any{})
 	}()
 
-	_, _, err = Default.queryerExec(queryer, context.Background(), "select 1", []interface{}{})
+	_, _, err = Default.queryerExec(queryer, context.Background(), "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	_, _, err = Default.queryerExec(&TestCrudQueryer{Queryer: queryer}, context.Background(), "select 1", []interface{}{})
+	_, _, err = Default.queryerExec(&TestCrudQueryer{Queryer: queryer}, context.Background(), "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	_, _, err = Default.queryerExec(func() interface{} { return queryer }, context.Background(), "select 1", []interface{}{})
+	_, _, err = Default.queryerExec(func() any { return queryer }, context.Background(), "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -138,7 +138,7 @@ func testQueryCall(t *testing.T, queryer Queryer) {
 		defer func() {
 			recover()
 		}()
-		Default.queryerExec("xxx", context.Background(), "select 1", []interface{}{})
+		Default.queryerExec("xxx", context.Background(), "select 1", []any{})
 	}()
 }
 
@@ -152,8 +152,8 @@ func TestNewValue(t *testing.T) {
 		fmt.Println(value)
 	}
 	{
-		src := []interface{}{string(""), int64(0)}
-		value := NewValue(src).Interface().([]interface{})
+		src := []any{string(""), int64(0)}
+		value := NewValue(src).Interface().([]any)
 		fmt.Println(src)
 		fmt.Println(value)
 		for i, s := range src {
@@ -163,15 +163,15 @@ func TestNewValue(t *testing.T) {
 				return
 			}
 		}
-		FilterFieldCall("test", value, "title,tid", func(fieldName, fieldFunc string, field reflect.StructField, value interface{}) {
+		FilterFieldCall("test", value, "title,tid", func(fieldName, fieldFunc string, field reflect.StructField, value any) {
 			fmt.Println(value)
 		})
 	}
 	{
 		var strVal string
 		var intVal int64
-		src := []interface{}{&strVal, &intVal}
-		value := NewValue(src).Interface().([]interface{})
+		src := []any{&strVal, &intVal}
+		value := NewValue(src).Interface().([]any)
 		fmt.Println(src)
 		fmt.Println(value)
 		for i, s := range src {
@@ -182,7 +182,7 @@ func TestNewValue(t *testing.T) {
 			}
 			fmt.Printf("%v,%v\n", d == nil, reflect.TypeOf(d))
 		}
-		FilterFieldCall("test", value, "title,tid", func(fieldName, fieldFunc string, field reflect.StructField, value interface{}) {
+		FilterFieldCall("test", value, "title,tid", func(fieldName, fieldFunc string, field reflect.StructField, value any) {
 			fmt.Printf("%v\n", reflect.TypeOf(value))
 		})
 	}
@@ -199,8 +199,8 @@ func TestNewValue(t *testing.T) {
 		}
 	}
 	{
-		src := []interface{}{TableName("xx"), string(""), int64(0)}
-		value := NewValue(src).Interface().([]interface{})
+		src := []any{TableName("xx"), string(""), int64(0)}
+		value := NewValue(src).Interface().([]any)
 		if len(value)+1 != len(src) {
 			t.Error("error")
 			return
@@ -219,7 +219,7 @@ type Object1 struct {
 
 type Object2TableName string
 
-func (o Object2TableName) GetTableName(args ...interface{}) string {
+func (o Object2TableName) GetTableName(args ...any) string {
 	return "abc"
 }
 
@@ -248,7 +248,7 @@ func TestTable(t *testing.T) {
 		t.Error(v)
 		return
 	}
-	if v := Table([]interface{}{Object2TableName("")}); v != "abc" {
+	if v := Table([]any{Object2TableName("")}); v != "abc" {
 		t.Error(v)
 		return
 	}
@@ -326,7 +326,7 @@ func TestFilterField(t *testing.T) {
 		}
 	}
 	{
-		v := MetaWith(TableNameGetterF(func(args ...interface{}) string {
+		v := MetaWith(TableNameGetterF(func(args ...any) string {
 			return "crud_object"
 		}), int64(0))
 		table := Table(v)
@@ -358,7 +358,7 @@ func TestFilterField(t *testing.T) {
 		}
 	}
 	{
-		table := FilterFieldCall("test", object, "#all", func(fieldName, fieldFunc string, field reflect.StructField, value interface{}) {
+		table := FilterFieldCall("test", object, "#all", func(fieldName, fieldFunc string, field reflect.StructField, value any) {
 		})
 		if table != "crud_object" {
 			t.Error("error")
@@ -366,7 +366,7 @@ func TestFilterField(t *testing.T) {
 		}
 	}
 	{
-		table := FilterFieldCall("test", int64(11), "tid#all", func(fieldName, fieldFunc string, field reflect.StructField, value interface{}) {
+		table := FilterFieldCall("test", int64(11), "tid#all", func(fieldName, fieldFunc string, field reflect.StructField, value any) {
 			if v, ok := value.(int64); !ok || v != 11 {
 				panic("error")
 			}
@@ -375,7 +375,7 @@ func TestFilterField(t *testing.T) {
 			t.Error("error")
 			return
 		}
-		table = FilterFieldCall("test", int64(11), "count(tid)#all", func(fieldName, fieldFunc string, field reflect.StructField, value interface{}) {
+		table = FilterFieldCall("test", int64(11), "count(tid)#all", func(fieldName, fieldFunc string, field reflect.StructField, value any) {
 			if v, ok := value.(int64); !ok || v != 11 {
 				panic("error")
 			}
@@ -386,7 +386,7 @@ func TestFilterField(t *testing.T) {
 		}
 	}
 	{
-		table := FilterFieldCall("test", []interface{}{int64(11)}, "tid#all", func(fieldName, fieldFunc string, field reflect.StructField, value interface{}) {
+		table := FilterFieldCall("test", []any{int64(11)}, "tid#all", func(fieldName, fieldFunc string, field reflect.StructField, value any) {
 			if v, ok := value.(int64); !ok || v != 11 {
 				panic("error")
 			}
@@ -395,7 +395,7 @@ func TestFilterField(t *testing.T) {
 			t.Error("error")
 			return
 		}
-		table = FilterFieldCall("test", []interface{}{TableName("crud_object"), int64(11), string("abc")}, "tid,title#all", func(fieldName, fieldFunc string, field reflect.StructField, value interface{}) {
+		table = FilterFieldCall("test", []any{TableName("crud_object"), int64(11), string("abc")}, "tid,title#all", func(fieldName, fieldFunc string, field reflect.StructField, value any) {
 			if v, ok := value.(int64); ok && v != 11 {
 				panic("error")
 			}
@@ -407,7 +407,7 @@ func TestFilterField(t *testing.T) {
 			t.Error("error")
 			return
 		}
-		table = FilterFieldCall("test", []interface{}{TableName("crud_object"), int64(11), string("abc")}, "count(tid),title#all", func(fieldName, fieldFunc string, field reflect.StructField, value interface{}) {
+		table = FilterFieldCall("test", []any{TableName("crud_object"), int64(11), string("abc")}, "count(tid),title#all", func(fieldName, fieldFunc string, field reflect.StructField, value any) {
 			if v, ok := value.(int64); ok && v != 11 {
 				panic("error")
 			}
@@ -425,7 +425,7 @@ func TestFilterField(t *testing.T) {
 			defer func() {
 				recover()
 			}()
-			FilterFieldCall("test", []interface{}{TableName("crud_object"), int64(11), string("abc")}, "count(tid)", func(fieldName, fieldFunc string, field reflect.StructField, value interface{}) {
+			FilterFieldCall("test", []any{TableName("crud_object"), int64(11), string("abc")}, "count(tid)", func(fieldName, fieldFunc string, field reflect.StructField, value any) {
 			})
 		}()
 	}
@@ -448,37 +448,37 @@ func TestFilterFormatCall(t *testing.T) {
 		var emptyStr string
 		var nilStr *string
 		var nilEmptyStr *string = &emptyStr
-		FilterFormatCall("1,2,3", []interface{}{"1", "2", "3"}, func(format string, arg interface{}) {
+		FilterFormatCall("1,2,3", []any{"1", "2", "3"}, func(format string, arg any) {
 			if arg.(string) != format {
 				t.Error("error")
 				return
 			}
 		})
-		FilterFormatCall("1,2,3", []interface{}{"1", "2", ""}, func(format string, arg interface{}) {
+		FilterFormatCall("1,2,3", []any{"1", "2", ""}, func(format string, arg any) {
 			if arg.(string) != format {
 				t.Error("error")
 				return
 			}
 		})
-		FilterFormatCall("1,2,3", []interface{}{"1", "2", nil}, func(format string, arg interface{}) {
+		FilterFormatCall("1,2,3", []any{"1", "2", nil}, func(format string, arg any) {
 			if arg.(string) != format {
 				t.Error("error")
 				return
 			}
 		})
-		FilterFormatCall("1,2,3", []interface{}{"1", "2", nilStr}, func(format string, arg interface{}) {
+		FilterFormatCall("1,2,3", []any{"1", "2", nilStr}, func(format string, arg any) {
 			if arg.(string) != format {
 				t.Error("error")
 				return
 			}
 		})
-		FilterFormatCall("1,2,3", []interface{}{"1", "2", nilEmptyStr}, func(format string, arg interface{}) {
+		FilterFormatCall("1,2,3", []any{"1", "2", nilEmptyStr}, func(format string, arg any) {
 			if arg.(string) != format {
 				t.Error("error")
 				return
 			}
 		})
-		FilterFormatCall("1,2,3#all", []interface{}{"1", "2", ""}, func(format string, arg interface{}) {
+		FilterFormatCall("1,2,3#all", []any{"1", "2", ""}, func(format string, arg any) {
 			if format == "3" && arg.(string) != "" {
 				t.Error("error")
 			}
@@ -487,13 +487,13 @@ func TestFilterFormatCall(t *testing.T) {
 				return
 			}
 		})
-		FilterFormatCall("1,2,3", []interface{}{"1", "2", IsNilArray(nil)}, func(format string, arg interface{}) {
+		FilterFormatCall("1,2,3", []any{"1", "2", IsNilArray(nil)}, func(format string, arg any) {
 			if arg.(string) != format {
 				t.Error("error")
 				return
 			}
 		})
-		FilterFormatCall("1,2,3", []interface{}{"1", "2", IsZeroArray(nil)}, func(format string, arg interface{}) {
+		FilterFormatCall("1,2,3", []any{"1", "2", IsZeroArray(nil)}, func(format string, arg any) {
 			if arg.(string) != format {
 				t.Error("error")
 				return
@@ -505,7 +505,7 @@ func TestFilterFormatCall(t *testing.T) {
 			defer func() {
 				recover()
 			}()
-			FilterFormatCall("x", []interface{}{1, 2}, func(format string, arg interface{}) {
+			FilterFormatCall("x", []any{1, 2}, func(format string, arg any) {
 			})
 		}()
 	}
@@ -713,7 +713,7 @@ func testUpdate(t *testing.T, queryer Queryer) {
 	{
 		var updateSQL string
 		var where []string
-		var args []interface{}
+		var args []any
 		updateSQL, args = UpdateSQL(object, "title,image,update_time,status#all", nil)
 		if strings.Contains(updateSQL, "tid") {
 			err = fmt.Errorf("error")
@@ -946,7 +946,7 @@ func testUpdate(t *testing.T, queryer Queryer) {
 			t.Error(err)
 			return
 		}
-		err = UpdateRowFilter(queryer, context.Background(), object, "title,image,update_time,status", []string{"tid=$1"}, "and", []interface{}{-100})
+		err = UpdateRowFilter(queryer, context.Background(), object, "title,image,update_time,status", []string{"tid=$1"}, "and", []any{-100})
 		if err != ErrNoRows {
 			t.Error(err)
 			return
@@ -1058,7 +1058,7 @@ func (r *RowsError) Next() bool {
 
 type ObjectInfoMap map[int64]string
 
-func (u ObjectInfoMap) Scan(v interface{}) {
+func (u ObjectInfoMap) Scan(v any) {
 	s := v.(*CrudObject)
 	u[s.TID] = fmt.Sprintf("%v-%v", s.Title, s.Level)
 }
@@ -1086,7 +1086,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 	}
 	{
 		sql := QuerySQL(object, "#all", "where tid=$1")
-		args := []interface{}{object.TID}
+		args := []any{object.TID}
 		fmt.Println("JoinWhere-->", sql, args)
 		var result *CrudObject
 		err = QueryRow(queryer, context.Background(), object, "#all", sql, args, &result)
@@ -1097,7 +1097,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 	}
 	{
 		sql := QuerySQL(object, "o.#all", "where tid=$1")
-		args := []interface{}{object.TID}
+		args := []any{object.TID}
 		fmt.Println("JoinWhere-->", sql, args)
 		var result *CrudObject
 		err = QueryRow(queryer, context.Background(), object, "o.#all", sql, args, &result)
@@ -1126,7 +1126,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 			return
 		}
 		result = nil
-		err = QueryRowWheref(queryer, context.Background(), object, "#all", "tid=$%v", []interface{}{object.TID}, &result)
+		err = QueryRowWheref(queryer, context.Background(), object, "#all", "tid=$%v", []any{object.TID}, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -1144,7 +1144,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 			return
 		}
 		result = nil
-		err = Default.QueryRowWheref(queryer, context.Background(), object, "#all", "tid=$%v", []interface{}{object.TID}, &result)
+		err = Default.QueryRowWheref(queryer, context.Background(), object, "#all", "tid=$%v", []any{object.TID}, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -1205,7 +1205,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 			return
 		}
 		results = nil
-		err = QueryWheref(queryer, context.Background(), object, "#all", "level>$%v#all", []interface{}{0}, "", 0, 0, &results)
+		err = QueryWheref(queryer, context.Background(), object, "#all", "level>$%v#all", []any{0}, "", 0, 0, &results)
 		if err != nil || len(results) != 11 {
 			t.Error(err)
 			return
@@ -1223,7 +1223,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 			return
 		}
 		results = nil
-		err = Default.QueryWheref(queryer, context.Background(), object, "#all", "level>$%v#all", []interface{}{0}, "", 0, 0, &results)
+		err = Default.QueryWheref(queryer, context.Background(), object, "#all", "level>$%v#all", []any{0}, "", 0, 0, &results)
 		if err != nil || len(results) != 11 {
 			t.Error(err)
 			return
@@ -1233,7 +1233,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 		var resultList []*CrudObject
 		var result *CrudObject
 		var resultList2 []xmap.M
-		var resultList3 []map[string]interface{}
+		var resultList3 []map[string]any
 		var int64IDs0, int64IDs1 []int64
 		var images0, images1 []*string
 		var resultMap0 map[int64]*CrudObject
@@ -1361,55 +1361,55 @@ func testQuery(t *testing.T, queryer Queryer) {
 	}
 	{
 		var idResult int64
-		err = QueryRow(queryer, context.Background(), int64(0), "#all", "select tid from crud_object where tid=$1", []interface{}{object.TID}, &idResult)
+		err = QueryRow(queryer, context.Background(), int64(0), "#all", "select tid from crud_object where tid=$1", []any{object.TID}, &idResult)
 		if err != nil || idResult < 1 {
 			t.Errorf("%v,%v", err, idResult)
 			return
 		}
 		var intResult int
-		err = QueryRow(queryer, context.Background(), int(0), "#all", "select int_value from crud_object where tid=$1", []interface{}{object.TID}, &intResult)
+		err = QueryRow(queryer, context.Background(), int(0), "#all", "select int_value from crud_object where tid=$1", []any{object.TID}, &intResult)
 		if err != nil || intResult < 1 {
 			t.Errorf("%v,%v", err, intResult)
 			return
 		}
 		var intPtrResult *int
-		err = QueryRow(queryer, context.Background(), converter.IntPtr(0), "#all", "select int_ptr from crud_object where tid=$1", []interface{}{object.TID}, &intPtrResult)
+		err = QueryRow(queryer, context.Background(), converter.IntPtr(0), "#all", "select int_ptr from crud_object where tid=$1", []any{object.TID}, &intPtrResult)
 		if err != nil || intPtrResult == nil {
 			t.Errorf("%v,%v", err, intPtrResult)
 			return
 		}
 		var int64Result int64
-		err = QueryRow(queryer, context.Background(), int64(0), "#all", "select int64_value from crud_object where tid=$1", []interface{}{object.TID}, &int64Result)
+		err = QueryRow(queryer, context.Background(), int64(0), "#all", "select int64_value from crud_object where tid=$1", []any{object.TID}, &int64Result)
 		if err != nil || int64Result < 1 {
 			t.Errorf("%v,%v", err, int64Result)
 			return
 		}
 		var int64PtrResult *int64
-		err = QueryRow(queryer, context.Background(), converter.Int64Ptr(0), "#all", "select int64_ptr from crud_object where tid=$1", []interface{}{object.TID}, &int64PtrResult)
+		err = QueryRow(queryer, context.Background(), converter.Int64Ptr(0), "#all", "select int64_ptr from crud_object where tid=$1", []any{object.TID}, &int64PtrResult)
 		if err != nil || int64PtrResult == nil {
 			t.Errorf("%v,%v", err, int64PtrResult)
 			return
 		}
 		var float64Result float64
-		err = QueryRow(queryer, context.Background(), float64(0), "#all", "select float64_value from crud_object where tid=$1", []interface{}{object.TID}, &float64Result)
+		err = QueryRow(queryer, context.Background(), float64(0), "#all", "select float64_value from crud_object where tid=$1", []any{object.TID}, &float64Result)
 		if err != nil || float64Result < 1 {
 			t.Errorf("%v,%v", err, float64Result)
 			return
 		}
 		var float64PtrResult *float64
-		err = QueryRow(queryer, context.Background(), converter.Float64Ptr(0), "#all", "select float64_ptr from crud_object where tid=$1", []interface{}{object.TID}, &float64PtrResult)
+		err = QueryRow(queryer, context.Background(), converter.Float64Ptr(0), "#all", "select float64_ptr from crud_object where tid=$1", []any{object.TID}, &float64PtrResult)
 		if err != nil || float64Result < 1 {
 			t.Errorf("%v,%v", err, float64Result)
 			return
 		}
 		var stringResult string
-		err = QueryRow(queryer, context.Background(), string(""), "#all", "select string_value from crud_object where tid=$1", []interface{}{object.TID}, &stringResult)
+		err = QueryRow(queryer, context.Background(), string(""), "#all", "select string_value from crud_object where tid=$1", []any{object.TID}, &stringResult)
 		if err != nil || len(stringResult) < 1 {
 			t.Errorf("%v,%v", err, stringResult)
 			return
 		}
 		var stringPtrResult *string
-		err = QueryRow(queryer, context.Background(), converter.StringPtr(""), "#all", "select string_ptr from crud_object where tid=$1", []interface{}{object.TID}, &stringPtrResult)
+		err = QueryRow(queryer, context.Background(), converter.StringPtr(""), "#all", "select string_ptr from crud_object where tid=$1", []any{object.TID}, &stringPtrResult)
 		if err != nil || stringPtrResult == nil {
 			t.Errorf("%v,%v", err, stringPtrResult)
 			return
@@ -1417,19 +1417,19 @@ func testQuery(t *testing.T, queryer Queryer) {
 	}
 	{
 		var idResult int64
-		err = QueryRowWheref(queryer, context.Background(), MetaWith(object, int64(0)), "tid#all", "tid=$%v", []interface{}{object.TID}, &idResult, "tid")
+		err = QueryRowWheref(queryer, context.Background(), MetaWith(object, int64(0)), "tid#all", "tid=$%v", []any{object.TID}, &idResult, "tid")
 		if err != nil || idResult < 1 {
 			t.Errorf("%v,%v", err, idResult)
 			return
 		}
 		var stringResult string
-		err = QueryRowWheref(queryer, context.Background(), MetaWith(object, string("")), "string_value#all", "tid=$%v", []interface{}{object.TID}, &stringResult, "string_value")
+		err = QueryRowWheref(queryer, context.Background(), MetaWith(object, string("")), "string_value#all", "tid=$%v", []any{object.TID}, &stringResult, "string_value")
 		if err != nil || len(stringResult) < 1 {
 			t.Errorf("%v,%v", err, stringResult)
 			return
 		}
 		var stringPtrResult *string
-		err = QueryRowWheref(queryer, context.Background(), MetaWith(object, converter.StringPtr("")), "string_ptr#all", "tid=$%v", []interface{}{object.TID}, &stringPtrResult, "string_ptr")
+		err = QueryRowWheref(queryer, context.Background(), MetaWith(object, converter.StringPtr("")), "string_ptr#all", "tid=$%v", []any{object.TID}, &stringPtrResult, "string_ptr")
 		if err != nil || stringPtrResult == nil {
 			t.Errorf("%v,%v", err, stringPtrResult)
 			return
@@ -1502,7 +1502,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 			return
 		}
 
-		err = QueryWheref(queryer, context.Background(), object, "#all", "levxxel>$%v#all", []interface{}{0}, "", 0, 0, &results)
+		err = QueryWheref(queryer, context.Background(), object, "#all", "levxxel>$%v#all", []any{0}, "", 0, 0, &results)
 		if err == nil {
 			t.Error(err)
 			return
@@ -1547,7 +1547,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 			t.Errorf("%v,%v", err, idList)
 			return
 		}
-		err = QueryRow(queryer, context.Background(), int64(0), "#all", "select tid from crud_object where tid=$1", []interface{}{object.TID}, &idResult)
+		err = QueryRow(queryer, context.Background(), int64(0), "#all", "select tid from crud_object where tid=$1", []any{object.TID}, &idResult)
 		if err == nil {
 			t.Errorf("%v,%v", err, idResult)
 			return
@@ -1659,7 +1659,7 @@ func testCount(t *testing.T, queryer Queryer) {
 		}
 
 		countSQL = Default.CountSQL(object, "count(tid)#all", "where tid>$1")
-		err = Default.Count(queryer, context.Background(), int64(0), "#all", countSQL, []interface{}{0}, &countValue)
+		err = Default.Count(queryer, context.Background(), int64(0), "#all", countSQL, []any{0}, &countValue)
 		if err != nil || countValue != 11 {
 			t.Error(err)
 			return
@@ -1667,18 +1667,18 @@ func testCount(t *testing.T, queryer Queryer) {
 	}
 	{
 		var countVal int64
-		err = CountWheref(queryer, context.Background(), object, "count(tid)#all", "int_value>$1#all", []interface{}{0}, "", &countVal, "tid")
+		err = CountWheref(queryer, context.Background(), object, "count(tid)#all", "int_value>$1#all", []any{0}, "", &countVal, "tid")
 		if err != nil || countVal != 7 {
 			t.Errorf("%v,%v", err, countVal)
 			return
 		}
-		err = CountWheref(queryer, context.Background(), MetaWith(object, int64(0)), "count(tid)#all", "int_value>$1#all", []interface{}{0}, "", &countVal, "tid")
+		err = CountWheref(queryer, context.Background(), MetaWith(object, int64(0)), "count(tid)#all", "int_value>$1#all", []any{0}, "", &countVal, "tid")
 		if err != nil || countVal != 7 {
 			t.Errorf("%v,%v", err, countVal)
 			return
 		}
 
-		err = Default.CountWheref(queryer, context.Background(), object, "count(tid)#all", "int_value>$1#all", []interface{}{0}, " ", &countVal, "tid")
+		err = Default.CountWheref(queryer, context.Background(), object, "count(tid)#all", "int_value>$1#all", []any{0}, " ", &countVal, "tid")
 		if err != nil || countVal != 7 {
 			t.Errorf("%v,%v", err, countVal)
 			return
@@ -1931,10 +1931,10 @@ func testUnify(t *testing.T, queryer Queryer) {
 	newFilterGetter := func() *FilterGetterCrudObjectUnify {
 		filter := &FilterGetterCrudObjectUnify{}
 		filter.Where.TID = object.TID
-		filter.Query.Filter = FilterGetterF(func(args ...interface{}) string {
+		filter.Query.Filter = FilterGetterF(func(args ...any) string {
 			return "tid,title#all"
 		})
-		filter.QueryRow.Filter = FilterGetterF(func(args ...interface{}) string {
+		filter.QueryRow.Filter = FilterGetterF(func(args ...any) string {
 			return "tid,int_value#all"
 		})
 		return filter

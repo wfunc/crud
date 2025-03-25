@@ -26,7 +26,7 @@ type Row struct {
 	*sql.Row
 }
 
-func (r Row) Scan(dest ...interface{}) (err error) {
+func (r Row) Scan(dest ...any) (err error) {
 	defer func() {
 		xerr := r.Row.Scan(dest...)
 		if err == nil {
@@ -42,7 +42,7 @@ type Rows struct {
 	*sql.Rows
 }
 
-func (r *Rows) Scan(dest ...interface{}) error {
+func (r *Rows) Scan(dest ...any) error {
 	if err := mockerCheck("Rows.Scan", r.SQL); err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (t *TxQueryer) Rollback() error {
 	return t.Tx.Rollback()
 }
 
-func (t *TxQueryer) Exec(ctx context.Context, query string, args ...interface{}) (insertId, affected int64, err error) {
+func (t *TxQueryer) Exec(ctx context.Context, query string, args ...any) (insertId, affected int64, err error) {
 	if err := mockerCheck("Tx.Exec", ""); err != nil {
 		return 0, 0, err
 	}
@@ -103,7 +103,7 @@ func (t *TxQueryer) Exec(ctx context.Context, query string, args ...interface{})
 	return
 }
 
-func (t *TxQueryer) ExecRow(ctx context.Context, query string, args ...interface{}) (insertId int64, err error) {
+func (t *TxQueryer) ExecRow(ctx context.Context, query string, args ...any) (insertId int64, err error) {
 	if err := mockerCheck("Tx.Exec", ""); err != nil {
 		return 0, err
 	}
@@ -114,7 +114,7 @@ func (t *TxQueryer) ExecRow(ctx context.Context, query string, args ...interface
 	return
 }
 
-func (t *TxQueryer) Query(ctx context.Context, query string, args ...interface{}) (rows crud.Rows, err error) {
+func (t *TxQueryer) Query(ctx context.Context, query string, args ...any) (rows crud.Rows, err error) {
 	if err := mockerCheck("Tx.Query", ""); err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (t *TxQueryer) Query(ctx context.Context, query string, args ...interface{}
 	return
 }
 
-func (t *TxQueryer) QueryRow(ctx context.Context, query string, args ...interface{}) (row crud.Row) {
+func (t *TxQueryer) QueryRow(ctx context.Context, query string, args ...any) (row crud.Row) {
 	raw := t.Tx.QueryRowContext(ctx, query, args...)
 	row = &Row{Row: raw, SQL: query}
 	return
@@ -162,7 +162,7 @@ func (d *DbQueryer) Begin(ctx context.Context) (tx *TxQueryer, err error) {
 	return
 }
 
-func (d *DbQueryer) Exec(ctx context.Context, query string, args ...interface{}) (insertId, affected int64, err error) {
+func (d *DbQueryer) Exec(ctx context.Context, query string, args ...any) (insertId, affected int64, err error) {
 	if err := mockerCheck("Pool.Exec", ""); err != nil {
 		return 0, 0, err
 	}
@@ -176,7 +176,7 @@ func (d *DbQueryer) Exec(ctx context.Context, query string, args ...interface{})
 	return
 }
 
-func (d *DbQueryer) ExecRow(ctx context.Context, query string, args ...interface{}) (insertId int64, err error) {
+func (d *DbQueryer) ExecRow(ctx context.Context, query string, args ...any) (insertId int64, err error) {
 	if err := mockerCheck("Pool.Exec", ""); err != nil {
 		return 0, err
 	}
@@ -187,7 +187,7 @@ func (d *DbQueryer) ExecRow(ctx context.Context, query string, args ...interface
 	return
 }
 
-func (d *DbQueryer) Query(ctx context.Context, query string, args ...interface{}) (rows crud.Rows, err error) {
+func (d *DbQueryer) Query(ctx context.Context, query string, args ...any) (rows crud.Rows, err error) {
 	if err := mockerCheck("Pool.Query", ""); err != nil {
 		return nil, err
 	}
@@ -198,7 +198,7 @@ func (d *DbQueryer) Query(ctx context.Context, query string, args ...interface{}
 	return
 }
 
-func (d *DbQueryer) QueryRow(ctx context.Context, query string, args ...interface{}) (row crud.Row) {
+func (d *DbQueryer) QueryRow(ctx context.Context, query string, args ...any) (row crud.Row) {
 	raw := d.DB.QueryRowContext(ctx, query, args...)
 	row = &Row{Row: raw, SQL: query}
 	return
