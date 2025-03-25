@@ -2,8 +2,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0cBrbBpGY/8hQs=
 github.com/cockroachdb/apd v1.1.0 h1:3LFP3629v+1aKXU5Q37mxmRxX/pIu1nijXydLShEq5I=
 github.com/cockroachdb/apd v1.1.0/go.mod h1:8Sl8LxpKi29FqWXR16WEFZRNSz3SoPzUzeMeY4+DwBQ=
-github.com/codingeasygo/crud v0.0.0-20230604050204-4e7316aa4767 h1:BlUQJpKL5x+rjFwmK5LhT989YEongy35VQoFuy/FTXA=
-github.com/codingeasygo/crud v0.0.0-20230604050204-4e7316aa4767/go.mod h1:aClYBIQOvyCprmYh0Wt/j0WcLrGTu255X9md7KFHoL0=
+github.com/wfunc/crud v0.0.0-20230604050204-4e7316aa4767 h1:BlUQJpKL5x+rjFwmK5LhT989YEongy35VQoFuy/FTXA=
+github.com/wfunc/crud v0.0.0-20230604050204-4e7316aa4767/go.mod h1:aClYBIQOvyCprmYh0Wt/j0WcLrGTu255X9md7KFHoL0=
 github.com/codingeasygo/util v0.0.0-20231206062002-1ce2f004b7d9 h1:lgZYRVFBxBu2ELumEtJHFINCz+Cs1eBVbv8XlhNP1FI=
 github.com/codingeasygo/util v0.0.0-20231206062002-1ce2f004b7d9/go.mod h1:CE705pc3Xn2F3nqMKhvfaigeXeDudpdteTzbf+2jwig=
 github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=

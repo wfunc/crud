@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/codingeasygo/crud/testsql"
+	"github.com/wfunc/crud/testsql"
 
 	_ "github.com/lib/pq"
 )

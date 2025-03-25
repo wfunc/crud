@@ -12,9 +12,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/codingeasygo/crud"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/util/xsql"
+	"github.com/wfunc/crud"
 )
 
 func stringTitle(v string) string {
@@ -712,7 +712,7 @@ func (g *AutoGen) Generate() (err error) {
 				"context"
 				"fmt"
 
-				"github.com/codingeasygo/crud"
+				"github.com/wfunc/crud"
 				"github.com/codingeasygo/util/attrvalid"
 				"github.com/codingeasygo/util/converter"
 				"github.com/codingeasygo/util/xsql"
@@ -747,7 +747,7 @@ func (g *AutoGen) Generate() (err error) {
 				"strings"
 				"testing"
 
-				"github.com/codingeasygo/crud"
+				"github.com/wfunc/crud"
 			)
 		`
 		if len(g.GetQueryer) < 1 {

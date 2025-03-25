@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/codingeasygo/crud"
+	"github.com/wfunc/crud"
 )
 
 var Shared *DbQueryer

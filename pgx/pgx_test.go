@@ -11,12 +11,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codingeasygo/crud/gen"
-	"github.com/codingeasygo/crud/testsql"
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xmap"
 	"github.com/codingeasygo/util/xsql"
 	"github.com/jackc/pgx/v4"
+	"github.com/wfunc/crud/gen"
+	"github.com/wfunc/crud/testsql"
 )
 
 func nameConv(isTable bool, name string) string {
@@ -58,10 +58,10 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/codingeasygo/crud"
-	"github.com/codingeasygo/crud/gen"
-	"github.com/codingeasygo/crud/sqlx"
-	"github.com/codingeasygo/crud/testsql"
+	"github.com/wfunc/crud"
+	"github.com/wfunc/crud/gen"
+	"github.com/wfunc/crud/sqlx"
+	"github.com/wfunc/crud/testsql"
 
 	_ "github.com/lib/pq"
 )

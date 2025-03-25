@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codingeasygo/crud"
-	"github.com/codingeasygo/crud/gen"
-	"github.com/codingeasygo/crud/testsql"
 	"github.com/codingeasygo/util/converter"
 	"github.com/codingeasygo/util/xsql"
+	"github.com/wfunc/crud"
+	"github.com/wfunc/crud/gen"
+	"github.com/wfunc/crud/testsql"
 
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -92,10 +92,10 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/codingeasygo/crud"
-	"github.com/codingeasygo/crud/gen"
-	"github.com/codingeasygo/crud/sqlx"
-	"github.com/codingeasygo/crud/testsql"
+	"github.com/wfunc/crud"
+	"github.com/wfunc/crud/gen"
+	"github.com/wfunc/crud/sqlx"
+	"github.com/wfunc/crud/testsql"
 
 	_ "github.com/lib/pq"
 )
@@ -255,10 +255,10 @@ import (
 	"reflect"
 	"database/sql"
 
-	"github.com/codingeasygo/crud"
-	"github.com/codingeasygo/crud/gen"
-	"github.com/codingeasygo/crud/sqlx"
-	"github.com/codingeasygo/crud/testsql"
+	"github.com/wfunc/crud"
+	"github.com/wfunc/crud/gen"
+	"github.com/wfunc/crud/sqlx"
+	"github.com/wfunc/crud/testsql"
 
 	_ "github.com/mattn/go-sqlite3"
 )

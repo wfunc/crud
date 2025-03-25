@@ -3,7 +3,7 @@ module github.com/wfunc/crud
 go 1.24.1
 
 require (
-	github.com/codingeasygo/crud v0.0.0-20230604050204-4e7316aa4767
+	github.com/wfunc/crud v0.0.0-20230604050204-4e7316aa4767
 	github.com/codingeasygo/util v0.0.0-20231206062002-1ce2f004b7d9
 	github.com/jackc/pgconn v1.14.3
 	github.com/jackc/pgx/v4 v4.18.3

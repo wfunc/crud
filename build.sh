@@ -11,10 +11,10 @@ echo "Installing Dependence"
 #########Running Test#########
 echo "Running Test"
 pkgs="\
-  github.com/codingeasygo/crud\
-  github.com/codingeasygo/crud/gen\
-  github.com/codingeasygo/crud/sqlx\
-  github.com/codingeasygo/crud/pgx\
+  github.com/wfunc/crud\
+  github.com/wfunc/crud/gen\
+  github.com/wfunc/crud/sqlx\
+  github.com/wfunc/crud/pgx\
 "
 echo "mode: set" >a.out
 for p in $pkgs; do
