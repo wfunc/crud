@@ -3,7 +3,7 @@ package gen
 import (
 	"reflect"
 
-	"github.com/codingeasygo/util/xsql"
+	"github.com/wfunc/util/xsql"
 )
 
 const TableSQLSQLITE = `

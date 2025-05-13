@@ -12,9 +12,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/codingeasygo/util/xmap"
-	"github.com/codingeasygo/util/xsql"
 	"github.com/wfunc/crud"
+	"github.com/wfunc/util/xmap"
+	"github.com/wfunc/util/xsql"
 )
 
 func stringTitle(v string) string {
@@ -692,7 +692,7 @@ func (g *AutoGen) Generate() (err error) {
 			//auto gen models by autogen
 			package %v
 			import (
-				"github.com/codingeasygo/util/xsql"
+				"github.com/wfunc/util/xsql"
 				"github.com/shopspring/decimal"
 			)
 		`
@@ -713,9 +713,9 @@ func (g *AutoGen) Generate() (err error) {
 				"fmt"
 
 				"github.com/wfunc/crud"
-				"github.com/codingeasygo/util/attrvalid"
-				"github.com/codingeasygo/util/converter"
-				"github.com/codingeasygo/util/xsql"
+				"github.com/wfunc/util/attrvalid"
+				"github.com/wfunc/util/converter"
+				"github.com/wfunc/util/xsql"
 			)
 		`
 		if len(g.GetQueryer) > 0 && g.GetQueryer != "GetQueryer" {

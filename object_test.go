@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/codingeasygo/util/converter"
-	"github.com/codingeasygo/util/xsql"
 	"github.com/shopspring/decimal"
+	"github.com/wfunc/util/converter"
+	"github.com/wfunc/util/xsql"
 )
 
 /***** metadata:CrudObject *****/

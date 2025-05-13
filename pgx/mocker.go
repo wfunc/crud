@@ -9,8 +9,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/codingeasygo/util/xhttp"
-	"github.com/codingeasygo/util/xmap"
+	"github.com/wfunc/util/xhttp"
+	"github.com/wfunc/util/xmap"
 )
 
 var ErrMock = fmt.Errorf("mock error")

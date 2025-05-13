@@ -3,7 +3,7 @@ package sqlx
 import (
 	"testing"
 
-	"github.com/codingeasygo/util/xmap"
+	"github.com/wfunc/util/xmap"
 )
 
 func TestRangeArgs(t *testing.T) {

@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/codingeasygo/util/attrscan"
-	"github.com/codingeasygo/util/xsql"
+	"github.com/wfunc/util/attrscan"
+	"github.com/wfunc/util/xsql"
 )
 
 type NilChecker interface {

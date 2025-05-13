@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codingeasygo/util/xsql"
 	"github.com/wfunc/crud/sqlx"
 	"github.com/wfunc/crud/testsql"
+	"github.com/wfunc/util/xsql"
 
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"

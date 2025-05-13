@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codingeasygo/util/converter"
-	"github.com/codingeasygo/util/xmap"
-	"github.com/codingeasygo/util/xsql"
 	"github.com/shopspring/decimal"
+	"github.com/wfunc/util/converter"
+	"github.com/wfunc/util/xmap"
+	"github.com/wfunc/util/xsql"
 )
 
 func init() {

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/codingeasygo/util/xsql"
+	"github.com/wfunc/util/xsql"
 )
 
 const TableSQLPG = `
