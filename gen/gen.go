@@ -1,3 +1,4 @@
+// Package gen provides code generation utilities for CRUD operations and model definitions.
 package gen
 
 import (
@@ -17,6 +18,7 @@ import (
 	"github.com/wfunc/util/xsql"
 )
 
+// stringTitle converts the first character of a string to uppercase.
 func stringTitle(v string) string {
 	if len(v) < 1 {
 		return v
@@ -24,6 +26,7 @@ func stringTitle(v string) string {
 	return strings.ToUpper(v[:1]) + v[1:]
 }
 
+// ConvCamelCase converts a snake_case string to CamelCase.
 func ConvCamelCase(isTable bool, name string) (result string) {
 	parts := strings.Split(name, "_")
 	for _, part := range parts {
@@ -32,6 +35,7 @@ func ConvCamelCase(isTable bool, name string) (result string) {
 	return
 }
 
+// ConvSizeTrim converts a column type to a Go type, trimming size specifications.
 func ConvSizeTrim(typeMap map[string][]string, s *Struct, column *Column) (result string) {
 	typ := regexp.MustCompile(`\([^\)]*\)`).ReplaceAllString(column.Type, "")
 	types := typeMap[strings.ToLower(typ)]
@@ -48,6 +52,7 @@ func ConvSizeTrim(typeMap map[string][]string, s *Struct, column *Column) (resul
 	return
 }
 
+// ConvKeyValueOption parses key-value options from a field's comment and returns the remaining comment and options.
 func ConvKeyValueOption(s *Struct, field *Field) (remain string, result []*Option) {
 	remainAll := []string{}
 	for _, comment := range strings.Split(field.Comment, ",") {
@@ -77,6 +82,7 @@ func ConvKeyValueOption(s *Struct, field *Field) (remain string, result []*Optio
 	return
 }
 
+// Column represents a database column with its properties.
 type Column struct {
 	Name         string  `json:"name"`
 	Type         string  `json:"type"`
@@ -88,6 +94,7 @@ type Column struct {
 	Comment      string  `json:"comment"`
 }
 
+// Table represents a database table with its schema, name, type, comment, and columns.
 type Table struct {
 	Schema  string    `json:"schema"`
 	Name    string    `json:"name"`
@@ -96,12 +103,13 @@ type Table struct {
 	Columns []*Column `json:"columns"`
 }
 
+// Query retrieves tables and their columns from the database using the provided queryer.
 func Query(queryer any, tableSQL, columnSQL, schema string) (tables []*Table, err error) {
 	tableArg := []any{}
 	if len(schema) > 0 {
 		tableArg = append(tableArg, schema)
 	}
-	err = crud.Query(queryer, context.Background(), &Table{}, "name,type,comment#all", tableSQL, tableArg, &tables)
+	err = crud.Query(context.Background(), queryer, &Table{}, "name,type,comment#all", tableSQL, tableArg, &tables)
 	if err != nil {
 		return
 	}
@@ -111,7 +119,7 @@ func Query(queryer any, tableSQL, columnSQL, schema string) (tables []*Table, er
 			columnArg = append(columnArg, schema)
 		}
 		columnArg = append(columnArg, table.Name)
-		err = crud.Query(queryer, context.Background(), &Column{}, "#all", columnSQL, columnArg, &table.Columns)
+		err = crud.Query(context.Background(), queryer, &Column{}, "#all", columnSQL, columnArg, &table.Columns)
 		if err != nil {
 			break
 		}
@@ -119,16 +127,23 @@ func Query(queryer any, tableSQL, columnSQL, schema string) (tables []*Table, er
 	return
 }
 
+// NameConv is a function type for converting names, typically from snake_case to CamelCase.
 type NameConv func(isTable bool, name string) string
+
+// TypeConv is a function type for converting column types to Go types based on a type map.
 type TypeConv func(typeMap map[string][]string, s *Struct, column *Column) string
+
+// OptionConv is a function type for converting field comments into options, returning the remaining comment and a list of options.
 type OptionConv func(s *Struct, field *Field) (comment string, options []*Option)
 
+// Option represents a key-value option for a field, including its name, value, and an optional comment.
 type Option struct {
 	Name    string
 	Value   string
 	Comment string
 }
 
+// Field represents a field in a struct, including its name, type, tag, comment, associated column, and options.
 type Field struct {
 	Name     string
 	Type     string
@@ -139,6 +154,7 @@ type Field struct {
 	External any
 }
 
+// Struct represents a Go struct generated from a database table, including its name, comment, associated table, fields, and any external data.
 type Struct struct {
 	Name     string
 	Comment  string
@@ -147,6 +163,7 @@ type Struct struct {
 	External any
 }
 
+// Gen is the main generator struct that holds the configuration for generating Go code from database tables.
 type Gen struct {
 	Tables     []*Table
 	TypeMap    map[string][]string
@@ -157,6 +174,7 @@ type Gen struct {
 	OnPre      func(*Gen, *Table) any
 }
 
+// NewGen creates a new Gen instance with the provided type map and tables.
 func NewGen(typeMap map[string][]string, tables []*Table) (gen *Gen) {
 	gen = &Gen{
 		Tables:     tables,
@@ -171,12 +189,14 @@ func NewGen(typeMap map[string][]string, tables []*Table) (gen *Gen) {
 	return
 }
 
+// Funcs adds custom functions to the generator's function map.
 func (g *Gen) Funcs(funcs template.FuncMap) {
 	for k, v := range funcs {
 		g.FuncMap[k] = v
 	}
 }
 
+// AsStruct converts a Table into a Struct, applying name conversion and type conversion for each column.
 func (g *Gen) AsStruct(t *Table) (s *Struct) {
 	s = &Struct{
 		Name:    g.NameConv(true, t.Name),
@@ -197,6 +217,7 @@ func (g *Gen) AsStruct(t *Table) (s *Struct) {
 	return
 }
 
+// convStruct converts a Table into a Struct, applying any pre-processing defined in the OnPre function.
 func (g *Gen) convStruct(t *Table) (data any) {
 	if g.OnPre != nil {
 		data = g.OnPre(g, t)
@@ -208,6 +229,7 @@ func (g *Gen) convStruct(t *Table) (data any) {
 	return
 }
 
+// JoinOption joins the values of a list of options based on the specified key and separator.
 func (g *Gen) JoinOption(options []*Option, key, seq string) string {
 	values := []string{}
 	for _, option := range options {
@@ -223,6 +245,7 @@ func (g *Gen) JoinOption(options []*Option, key, seq string) string {
 	return strings.Join(values, seq)
 }
 
+// Generate generates Go code for each table in the generator's tables, calling the provided function with a buffer and data.
 func (g *Gen) Generate(writer io.Writer, call func(buffer io.Writer, data any) error) (err error) {
 	var source []byte
 	for _, table := range g.Tables {
@@ -246,6 +269,7 @@ func (g *Gen) Generate(writer io.Writer, call func(buffer io.Writer, data any) e
 	return
 }
 
+// GenerateByTemplate generates Go code using a template for each table in the generator's tables, writing the output to the provided writer.
 func (g *Gen) GenerateByTemplate(name, tmpl string, writer io.Writer) (err error) {
 	structTmpl := template.New(name).Funcs(g.FuncMap)
 	_, err = structTmpl.Parse(tmpl)
@@ -255,6 +279,7 @@ func (g *Gen) GenerateByTemplate(name, tmpl string, writer io.Writer) (err error
 	return
 }
 
+// Fields constants define various field configurations for auto-generated code.
 const (
 	FieldsOptional = "optional"
 	FieldsRequired = "required"
@@ -265,6 +290,7 @@ const (
 	FieldsNotOmit  = "n_omit"
 )
 
+// AutoGen is a structure that holds configuration and state for generating Go code from database tables.
 type AutoGen struct {
 	TypeField     map[string]map[string]string
 	ValidField    map[string]map[string]string
@@ -302,6 +328,7 @@ type AutoGen struct {
 	OutTestFile   string
 }
 
+// FuncMap returns a template function map with custom functions for generating code.
 func (g *AutoGen) FuncMap() (funcs template.FuncMap) {
 	funcs = template.FuncMap{
 		"JoinShowOption":  g.JoinShowOption,
@@ -310,7 +337,7 @@ func (g *AutoGen) FuncMap() (funcs template.FuncMap) {
 		"FieldZero":       g.FieldZero,
 		"FieldType":       g.FieldType,
 		"FieldTags":       g.FieldTags,
-		"FieldJson":       g.FieldJson,
+		"FieldJSON":       g.FieldJSON,
 		"FieldDefineType": g.FieldDefineType,
 	}
 	for k, v := range g.FuncOver {
@@ -319,6 +346,7 @@ func (g *AutoGen) FuncMap() (funcs template.FuncMap) {
 	return
 }
 
+// JoinShowOption joins the names of options, excluding those that end with "Removed", using the specified key and separator.
 func (g *AutoGen) JoinShowOption(options []*Option, key, seq string) string {
 	values := []string{}
 	for _, option := range options {
@@ -330,6 +358,7 @@ func (g *AutoGen) JoinShowOption(options []*Option, key, seq string) string {
 	return strings.Join(values, seq)
 }
 
+// PrimaryField retrieves the primary key field of a struct based on the specified key.
 func (g *AutoGen) PrimaryField(s *Struct, key string) string {
 	for _, f := range s.Fields {
 		if !f.Column.IsPK {
@@ -351,6 +380,7 @@ func (g *AutoGen) PrimaryField(s *Struct, key string) string {
 	return ""
 }
 
+// FieldInvalid generates an invalid value for a field based on its type.
 func (g *AutoGen) FieldInvalid(s *Struct, field *Field) (typ string) {
 	switch field.Type {
 	case "string":
@@ -361,6 +391,7 @@ func (g *AutoGen) FieldInvalid(s *Struct, field *Field) (typ string) {
 	return
 }
 
+// FieldZero generates a zero value for a field based on its type.
 func (g *AutoGen) FieldZero(s *Struct, field *Field) (typ string) {
 	switch field.Type {
 	case "string":
@@ -371,6 +402,7 @@ func (g *AutoGen) FieldZero(s *Struct, field *Field) (typ string) {
 	return
 }
 
+// FieldType determines the type of a field, potentially using a custom type mapping.
 func (g *AutoGen) FieldType(s *Struct, field *Field) (typ string) {
 	if g.TypeField == nil {
 		g.TypeField = map[string]map[string]string{}
@@ -388,6 +420,7 @@ func (g *AutoGen) FieldType(s *Struct, field *Field) (typ string) {
 	return
 }
 
+// FieldTags generates struct field tags for validation and JSON serialization.
 func (g *AutoGen) FieldTags(s *Struct, field *Field) (allTag string) {
 	if g.ValidField == nil {
 		g.ValidField = map[string]map[string]string{}
@@ -444,7 +477,8 @@ func (g *AutoGen) FieldTags(s *Struct, field *Field) (allTag string) {
 	return
 }
 
-func (g *AutoGen) FieldJson(s *Struct, field *Field) (tag string) {
+// FieldJSON generates JSON tags for a field, optionally omitting it if specified in the field configuration.
+func (g *AutoGen) FieldJSON(s *Struct, field *Field) (tag string) {
 	var fieldNotOmit = xsql.StringArray{}
 	if fieldConfig := g.FieldFilter[s.Table.Name]; len(fieldConfig) > 0 {
 		fieldOptional := fieldConfig[FieldsNotOmit]
@@ -460,6 +494,7 @@ func (g *AutoGen) FieldJson(s *Struct, field *Field) (tag string) {
 	return
 }
 
+// FieldDefineType generates a type definition for a field, converting it to a more readable format if necessary.
 func (g *AutoGen) FieldDefineType(s *Struct, field *Field) (result string) {
 	typ := g.FieldType(s, field)
 	if strings.HasPrefix(typ, "*") {
@@ -479,6 +514,7 @@ func (g *AutoGen) FieldDefineType(s *Struct, field *Field) (result string) {
 	return
 }
 
+// OnPre is called before generating code for a table, allowing for pre-processing of configurations and comments.
 func (g *AutoGen) OnPre(gen *Gen, table *Table) (data any) {
 	if g.FieldFilter == nil {
 		g.FieldFilter = map[string]map[string]string{}
@@ -677,6 +713,7 @@ func (g *AutoGen) OnPre(gen *Gen, table *Table) (data any) {
 	return
 }
 
+// Generate generates Go code for the AutoGen configuration, including struct definitions, function definitions, and tests.
 func (g *AutoGen) Generate() (err error) {
 	if g.TypeMap == nil {
 		g.TypeMap = map[string][]string{}
@@ -689,7 +726,7 @@ func (g *AutoGen) Generate() (err error) {
 	}
 	if len(g.OutStructPre) < 1 {
 		g.OutStructPre = `
-			//auto gen models by autogen
+			// Package %v is auto gen models by autogen
 			package %v
 			import (
 				"github.com/wfunc/util/xsql"
@@ -699,13 +736,13 @@ func (g *AutoGen) Generate() (err error) {
 	}
 	if len(g.OutDefinePre) < 1 {
 		g.OutDefinePre = `
-			//auto gen func by autogen
+			// Package %v is auto gen func by autogen
 			package %v
 		`
 	}
 	if len(g.OutFuncPre) < 1 {
 		g.OutFuncPre = `
-			//auto gen func by autogen
+			// Package %v is auto gen func by autogen
 			package %v
 			import (
 				"reflect"
@@ -738,7 +775,7 @@ func (g *AutoGen) Generate() (err error) {
 	}
 	if len(g.OutTestPre) < 1 {
 		g.OutTestPre = `
-			//auto gen func by autogen
+			// Package %v is auto gen func by autogen
 			package %v
 			import (
 				"context"
@@ -782,7 +819,7 @@ func (g *AutoGen) Generate() (err error) {
 		generator.NameConv = g.NameConv
 		generator.OnPre = g.OnPre
 		buffer := bytes.NewBuffer(nil)
-		fmt.Fprintf(buffer, g.OutStructPre, g.OutPackage)
+		fmt.Fprintf(buffer, g.OutStructPre, g.OutPackage, g.OutPackage)
 		err = generator.GenerateByTemplate("mod", StructTmpl, buffer)
 		if err != nil {
 			return
@@ -807,7 +844,7 @@ func (g *AutoGen) Generate() (err error) {
 		generator.NameConv = g.NameConv
 		generator.OnPre = g.OnPre
 		buffer := bytes.NewBuffer(nil)
-		fmt.Fprintf(buffer, g.OutDefinePre, g.OutPackage)
+		fmt.Fprintf(buffer, g.OutDefinePre, g.OutPackage, g.OutPackage)
 		err = generator.GenerateByTemplate("fields", DefineTmpl, buffer)
 		if err != nil {
 			return
@@ -832,7 +869,7 @@ func (g *AutoGen) Generate() (err error) {
 		generator.NameConv = g.NameConv
 		generator.OnPre = g.OnPre
 		buffer := bytes.NewBuffer(nil)
-		fmt.Fprintf(buffer, g.OutFuncPre, g.OutPackage)
+		fmt.Fprintf(buffer, g.OutFuncPre, g.OutPackage, g.OutPackage)
 		fmt.Fprintf(buffer, "%v", g.OutFuncCommon)
 		err = generator.GenerateByTemplate("func", StructFuncTmpl, buffer)
 		if err != nil {
@@ -858,7 +895,7 @@ func (g *AutoGen) Generate() (err error) {
 		generator.NameConv = g.NameConv
 		generator.OnPre = g.OnPre
 		buffer := bytes.NewBuffer(nil)
-		fmt.Fprintf(buffer, g.OutTestPre, g.OutPackage)
+		fmt.Fprintf(buffer, g.OutTestPre, g.OutPackage, g.OutPackage)
 		fmt.Fprintf(buffer, "%v", g.OutTestCommon)
 		err = generator.GenerateByTemplate("test", StructTestTmpl, buffer)
 		if err != nil {

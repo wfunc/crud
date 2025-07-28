@@ -106,7 +106,7 @@ func (o *CrudObjectTypeArray) EnumValid(v any) (err error) {
 	return fmt.Errorf("must be in %v", CrudObjectTypeAll)
 }
 
-// DbArray will join value to database array
+// DBArray will join value to database array
 func (o CrudObjectTypeArray) DbArray() (res string) {
 	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
 	return
@@ -150,7 +150,7 @@ func (o *CrudObjectStatusArray) EnumValid(v any) (err error) {
 	return fmt.Errorf("must be in %v", CrudObjectStatusAll)
 }
 
-// DbArray will join value to database array
+// DBArray will join value to database array
 func (o CrudObjectStatusArray) DbArray() (res string) {
 	res = "{" + converter.JoinSafe(o, ",", converter.JoinPolicyDefault) + "}"
 	return

@@ -1,3 +1,4 @@
+// Package pgx provides utilities for mocking and testing database and HTTP interactions.
 package pgx
 
 import (
@@ -13,8 +14,13 @@ import (
 	"github.com/wfunc/util/xmap"
 )
 
+// ErrMock is the error returned when a mock condition is triggered.
 var ErrMock = fmt.Errorf("mock error")
+
+// Verbose controls whether to print verbose output during mocking.
 var Verbose = false
+
+// Client is the shared HTTP client used for making requests.
 var Client = xhttp.Shared
 
 var mocking = false
@@ -48,15 +54,18 @@ func mockerCheck(key, sql string) (err error) {
 	return
 }
 
+// MockerStart enables mocking mode, allowing for the interception of database and HTTP calls.
 func MockerStart() {
 	mocking = true
 }
 
+// MockerStop disables mocking mode, reverting to normal operation.
 func MockerStop() {
 	MockerClear()
 	mocking = false
 }
 
+// MockerClear resets the mock state, clearing all triggers and matches.
 func MockerClear() {
 	mockRunnedLck.Lock()
 	mockTrigger = map[string][]int{}
@@ -83,22 +92,27 @@ func mockerSet(key, match string, isPanice bool, triggers ...int) {
 	mockPanic = isPanice
 }
 
+// MockerSet sets a mock condition for a specific key, allowing for controlled responses during tests.
 func MockerSet(key string, trigger int) {
 	mockerSet(key, "", false, trigger)
 }
 
+// MockerPanic sets a mock condition that will panic when triggered, useful for testing error handling.
 func MockerPanic(key string, trigger int) {
 	mockerSet(key, "", true, trigger)
 }
 
+// MockerMatchSet sets a mock condition that matches a specific pattern, allowing for controlled responses during tests.
 func MockerMatchSet(key, match string) {
 	mockerSet(key, match, false)
 }
 
+// MockerMatchPanic sets a mock condition that matches a specific pattern and will panic when triggered, useful for testing error handling.
 func MockerMatchPanic(key, match string) {
 	mockerSet(key, match, true)
 }
 
+// MockerCaller is a struct that encapsulates the mocking functionality for HTTP calls, allowing for controlled responses and error handling during tests.
 type MockerCaller struct {
 	Call     func(func(trigger int) (res xmap.M, err error)) xmap.M
 	calld    func(int, func(trigger int) (res xmap.M, err error)) xmap.M
@@ -106,22 +120,26 @@ type MockerCaller struct {
 	Shoulder xmap.Shoulder
 }
 
+// NewMockerCaller creates a new MockerCaller instance with a shared HTTP client and a default shoulder for error handling.
 func NewMockerCaller() (caller *MockerCaller) {
 	caller = &MockerCaller{Client: Client}
 	caller.Call = func(c func(trigger int) (xmap.M, error)) xmap.M { return caller.calld(1, c) }
 	return
 }
 
+// Should sets the expectation for the mock call, allowing for validation of the response and error handling.
 func (m *MockerCaller) Should(t *testing.T, args ...any) *MockerCaller {
 	m.Shoulder.Should(t, args...)
 	return m
 }
 
+// ShouldError sets the expectation for the mock call to expect an error, allowing for validation of the response and error handling.
 func (m *MockerCaller) ShouldError(t *testing.T) *MockerCaller {
 	m.Shoulder.ShouldError(t)
 	return m
 }
 
+// OnlyLog sets the expectation for the mock call to only log the request, allowing for validation of the response and error handling.
 func (m *MockerCaller) OnlyLog(only bool) *MockerCaller {
 	m.Shoulder.OnlyLog(only)
 	return m
@@ -181,7 +199,7 @@ func (m *MockerCaller) PostJSONMap(body any, format string, args ...any) (data x
 	return
 }
 
-// MethodBytes will do http request, read reponse and parse to map
+// MethodMap will do http request, read reponse and parse to map
 func (m *MockerCaller) MethodMap(method string, header xmap.M, body io.Reader, format string, args ...any) (data xmap.M, res *http.Response, err error) {
 	m.calld(1, func(trigger int) (xmap.M, error) {
 		data, res, err = m.Client.MethodMap(method, header, body, format, args...)
@@ -217,6 +235,7 @@ func (m *MockerCaller) UploadMap(fields xmap.M, filekey, filename, format string
 	return
 }
 
+// Should is a convenience method for setting expectations on the mock call, allowing for validation of the response and error handling.
 func Should(t *testing.T, args ...any) (caller *MockerCaller) {
 	caller = NewMockerCaller()
 	caller.calld = func(depth int, call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -227,6 +246,7 @@ func Should(t *testing.T, args ...any) (caller *MockerCaller) {
 	return caller.Should(t, args...)
 }
 
+// ShouldError is a convenience method for setting expectations on the mock call to expect an error, allowing for validation of the response and error handling.
 func ShouldError(t *testing.T) (caller *MockerCaller) {
 	caller = NewMockerCaller()
 	caller.calld = func(depth int, call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -265,6 +285,7 @@ func rangeArgs(args []any, call func(key string, trigger int)) {
 	}
 }
 
+// MockerSetCall sets a mock condition for a specific key, allowing for controlled responses during tests.
 func MockerSetCall(args ...any) (caller *MockerCaller) {
 	caller = NewMockerCaller()
 	caller.calld = func(depth int, call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -279,6 +300,7 @@ func MockerSetCall(args ...any) (caller *MockerCaller) {
 	return
 }
 
+// MockerPanicCall sets a mock condition that will panic when triggered, useful for testing error handling.
 func MockerPanicCall(args ...any) (caller *MockerCaller) {
 	caller = NewMockerCaller()
 	caller.calld = func(depth int, call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -293,6 +315,7 @@ func MockerPanicCall(args ...any) (caller *MockerCaller) {
 	return
 }
 
+// MockerMatchSetCall sets a mock condition that matches a specific pattern, allowing for controlled responses during tests.
 func MockerMatchSetCall(key, match string) (caller *MockerCaller) {
 	caller = NewMockerCaller()
 	caller.calld = func(depth int, call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -305,6 +328,7 @@ func MockerMatchSetCall(key, match string) (caller *MockerCaller) {
 	return
 }
 
+// MockerMatchPanicCall sets a mock condition that matches a specific pattern and will panic when triggered, useful for testing error handling.
 func MockerMatchPanicCall(key, match string) (caller *MockerCaller) {
 	caller = NewMockerCaller()
 	caller.calld = func(depth int, call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -317,6 +341,7 @@ func MockerMatchPanicCall(key, match string) (caller *MockerCaller) {
 	return
 }
 
+// MockerSetRangeCall sets a mock condition for a range of values, allowing for controlled responses during tests.
 func MockerSetRangeCall(key string, start, end int) (caller *MockerCaller) {
 	caller = NewMockerCaller()
 	caller.calld = func(depth int, call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -331,6 +356,7 @@ func MockerSetRangeCall(key string, start, end int) (caller *MockerCaller) {
 	return
 }
 
+// MockerPanicRangeCall sets a mock condition that will panic for a range of values, useful for testing error handling.
 func MockerPanicRangeCall(key string, start, end int) (caller *MockerCaller) {
 	caller = NewMockerCaller()
 	caller.calld = func(depth int, call func(trigger int) (res xmap.M, err error)) xmap.M {

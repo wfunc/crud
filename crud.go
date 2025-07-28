@@ -1,4 +1,6 @@
 // Package crud is simple curd tools to process database
+//
+//nolint:golint
 package crud
 
 import (
@@ -13,28 +15,36 @@ import (
 	"github.com/wfunc/util/xsql"
 )
 
+// NilChecker is an interface for checking nil values.
 type NilChecker interface {
 	IsNil() bool
 }
 
+// ZeroChecker is an interface for checking zero values.
 type ZeroChecker interface {
 	IsZero() bool
 }
 
+// ArrayConverter is an interface for converting arrays.
 type TableNameGetter interface {
 	GetTableName(args ...any) string
 }
 
+// TableNameGetterF is a function type that implements the TableNameGetter interface.
 type TableNameGetterF func(args ...any) string
 
+// GetTableName returns the table name based on the provided arguments.
 func (t TableNameGetterF) GetTableName(args ...any) string { return t(args...) }
 
+// FilterGetter is an interface for getting filter values.
 type FilterGetter interface {
 	GetFilter(args ...any) string
 }
 
+// FilterGetterF is a function type that implements the FilterGetter interface.
 type FilterGetterF func(args ...any) string
 
+// GetFilter returns the filter value based on the provided arguments.
 func (f FilterGetterF) GetFilter(args ...any) string { return f(args...) }
 
 func jsonString(v any) string {
@@ -45,6 +55,7 @@ func jsonString(v any) string {
 	return string(data)
 }
 
+// BuildOrderby constructs an ORDER BY clause based on the provided order string.
 func BuildOrderby(supported string, order string) (orderby string) {
 	if len(order) > 0 {
 		orderAsc := order[0:1]
@@ -61,6 +72,7 @@ func BuildOrderby(supported string, order string) (orderby string) {
 	return
 }
 
+// NewValue creates a new reflect.Value based on the provided value.
 func NewValue(v any) (value reflect.Value) {
 	if v, ok := v.([]any); ok {
 		result := []any{}
@@ -83,6 +95,7 @@ func NewValue(v any) (value reflect.Value) {
 	return
 }
 
+// MetaWith constructs a metadata slice with the provided fields.
 func MetaWith(o any, fields ...any) (v []any) {
 	tableName := ""
 	if name, ok := o.(string); ok {
@@ -97,6 +110,7 @@ func MetaWith(o any, fields ...any) (v []any) {
 	return
 }
 
+// Default is the default CRUD instance with basic configurations.
 var Default = &CRUD{
 	Scanner: attrscan.Scanner{
 		Tag: "json",
@@ -109,21 +123,32 @@ var Default = &CRUD{
 	Log: func(caller int, format string, args ...any) {
 		log.Output(caller+3, fmt.Sprintf(format, args...))
 	},
-	ParmConv: func(on, fieldName, fieldFunc string, field reflect.StructField, value any) any {
+	ParamConv: func(on, fieldName, fieldFunc string, field reflect.StructField, value any) any {
 		return value
 	},
 }
 
+// NameConv is a function type for converting field names based on context.
 type NameConv func(on, name string, field reflect.StructField) string
-type ParmConv func(on, fieldName, fieldFunc string, field reflect.StructField, value any) any
+
+// ParamConv is a function type for converting field values based on context.
+type ParamConv func(on, fieldName, fieldFunc string, field reflect.StructField, value any) any
+
+// LogF is a function type for logging messages.
 type LogF func(caller int, format string, args ...any)
+
+// TableName is a type for representing table names.
 type TableName string
+
+// FilterValue is a type for representing filter values.
 type FilterValue string
 
+// Args returns a slice of arguments.
 func Args(args ...any) []any {
 	return args
 }
 
+// CRUD is the main structure for CRUD operations.
 type CRUD struct {
 	attrscan.Scanner
 	ArgFormat   string
@@ -131,7 +156,7 @@ type CRUD struct {
 	Verbose     bool
 	Log         LogF
 	TablePrefix string
-	ParmConv    ParmConv
+	ParamConv   ParamConv
 }
 
 func (c *CRUD) getErrNoRows() (err error) {
@@ -143,11 +168,13 @@ func (c *CRUD) getErrNoRows() (err error) {
 	return
 }
 
+// Table returns the table name based on the provided value.
 func Table(v any) (table string) {
 	table = Default.Table(v)
 	return
 }
 
+// Table returns the table name based on the provided value.
 func (c *CRUD) Table(v any) (table string) {
 	if v, ok := v.([]any); ok {
 		for _, f := range v {
@@ -189,6 +216,7 @@ func (c *CRUD) Table(v any) (table string) {
 	return
 }
 
+// Sprintf formats the given integer value according to the specified format string.
 func (c *CRUD) Sprintf(format string, v int) string {
 	args := []any{}
 	arg := fmt.Sprintf("%d", v)
@@ -199,11 +227,13 @@ func (c *CRUD) Sprintf(format string, v int) string {
 	return fmt.Sprintf(format, args...)
 }
 
+// FilterFieldCall processes the fields of a value based on the provided filter and calls the specified function for each field.
 func FilterFieldCall(on string, v any, filter string, call func(fieldName, fieldFunc string, field reflect.StructField, value any)) (table string) {
 	table = Default.FilterFieldCall(on, v, filter, call)
 	return
 }
 
+// FilterFieldCall processes the fields of a value based on the provided filter and calls the specified function for each field.
 func (c *CRUD) FilterFieldCall(on string, v any, filter string, call func(fieldName, fieldFunc string, field reflect.StructField, value any)) (table string) {
 	filters := strings.Split(filter, "|")
 	called := map[string]bool{}
@@ -284,10 +314,12 @@ func (c *CRUD) filterFieldOnceCall(on string, v any, filter string, call func(fi
 	return
 }
 
+// FilterFormatCall processes the format strings and calls the specified function for each format.
 func FilterFormatCall(formats string, args []any, call func(format string, arg any)) {
 	Default.FilterFormatCall(formats, args, call)
 }
 
+// FilterFormatCall processes the format strings and calls the specified function for each format.
 func (c *CRUD) FilterFormatCall(formats string, args []any, call func(format string, arg any)) {
 	formatParts := strings.SplitN(formats, "#", 2)
 	var incNil, incZero bool
@@ -308,6 +340,7 @@ func (c *CRUD) FilterFormatCall(formats string, args []any, call func(format str
 	}
 }
 
+// FilterWhere processes the fields of a value based on the provided filter and returns the WHERE clause and arguments.
 func (c *CRUD) FilterWhere(args []any, v any, filter string) (where_ []string, args_ []any) {
 	args_ = args
 	c.FilterFieldCall("where", v, filter, func(fieldName, fieldFunc string, field reflect.StructField, fieldValue any) {
@@ -331,21 +364,23 @@ func (c *CRUD) FilterWhere(args []any, v any, filter string) (where_ []string, a
 		if (strings.Contains(cmp, " or ") || strings.Contains(cmp, " and ")) && !strings.HasPrefix(cmp, "(") {
 			cmp = "(" + cmp + ")"
 		}
-		args_ = append(args_, c.ParmConv("where", fieldName, fieldFunc, field, fieldValue))
+		args_ = append(args_, c.ParamConv("where", fieldName, fieldFunc, field, fieldValue))
 		where_ = append(where_, c.Sprintf(cmp, len(args_)))
 	})
 	return
 }
 
+// AppendInsert appends a field and its parameter to the insert statement.
 func AppendInsert(fields, param []string, args []any, ok bool, format string, v any) (fields_, param_ []string, args_ []any) {
 	fields_, param_, args_ = Default.AppendInsert(fields, param, args, ok, format, v)
 	return
 }
 
+// AppendInsert appends a field and its parameter to the insert statement.
 func (c *CRUD) AppendInsert(fields, param []string, args []any, ok bool, format string, v any) (fields_, param_ []string, args_ []any) {
 	fields_, param_, args_ = fields, param, args
 	if ok {
-		args_ = append(args_, c.ParmConv("insert", format, "", reflect.StructField{}, v))
+		args_ = append(args_, c.ParamConv("insert", format, "", reflect.StructField{}, v))
 		parts := strings.SplitN(format, "=", 2)
 		param_ = append(param_, c.Sprintf(parts[1], len(args_)))
 		fields_ = append(fields_, parts[0])
@@ -353,15 +388,17 @@ func (c *CRUD) AppendInsert(fields, param []string, args []any, ok bool, format 
 	return
 }
 
+// AppendInsertf appends multiple fields and their parameters to the insert statement.
 func AppendInsertf(fields, param []string, args []any, formats string, v ...any) (fields_, param_ []string, args_ []any) {
 	fields_, param_, args_ = Default.AppendInsertf(fields, param, args, formats, v...)
 	return
 }
 
+// AppendInsertf appends multiple fields and their parameters to the insert statement.
 func (c *CRUD) AppendInsertf(fields, param []string, args []any, formats string, v ...any) (fields_, param_ []string, args_ []any) {
 	fields_, param_, args_ = fields, param, args
 	c.FilterFormatCall(formats, v, func(format string, arg any) {
-		args_ = append(args_, c.ParmConv("insert", format, "", reflect.StructField{}, arg))
+		args_ = append(args_, c.ParamConv("insert", format, "", reflect.StructField{}, arg))
 		parts := strings.SplitN(format, "=", 2)
 		param_ = append(param_, c.Sprintf(parts[1], len(args_)))
 		fields_ = append(fields_, parts[0])
@@ -369,67 +406,77 @@ func (c *CRUD) AppendInsertf(fields, param []string, args []any, formats string,
 	return
 }
 
+// AppendSet appends a field and its parameter to the SET clause.
 func AppendSet(sets []string, args []any, ok bool, format string, v any) (sets_ []string, args_ []any) {
 	sets_, args_ = Default.AppendSet(sets, args, ok, format, v)
 	return
 }
 
+// AppendSet appends a field and its parameter to the SET clause.
 func (c *CRUD) AppendSet(sets []string, args []any, ok bool, format string, v any) (sets_ []string, args_ []any) {
 	sets_, args_ = sets, args
 	if ok {
-		args_ = append(args_, c.ParmConv("update", format, "", reflect.StructField{}, v))
+		args_ = append(args_, c.ParamConv("update", format, "", reflect.StructField{}, v))
 		sets_ = append(sets_, c.Sprintf(format, len(args_)))
 	}
 	return
 }
 
+// AppendSetf appends multiple fields and their parameters to the SET clause.
 func AppendSetf(sets []string, args []any, formats string, v ...any) (sets_ []string, args_ []any) {
 	sets_, args_ = Default.AppendSetf(sets, args, formats, v...)
 	return
 }
 
+// AppendSetf appends multiple fields and their parameters to the SET clause.
 func (c *CRUD) AppendSetf(sets []string, args []any, formats string, v ...any) (sets_ []string, args_ []any) {
 	sets_, args_ = sets, args
 	c.FilterFormatCall(formats, v, func(format string, arg any) {
-		args_ = append(args_, c.ParmConv("update", format, "", reflect.StructField{}, arg))
+		args_ = append(args_, c.ParamConv("update", format, "", reflect.StructField{}, arg))
 		sets_ = append(sets_, c.Sprintf(format, len(args_)))
 	})
 	return
 }
 
+// AppendWhere appends a field and its parameter to the WHERE clause.
 func AppendWhere(where []string, args []any, ok bool, format string, v any) (where_ []string, args_ []any) {
 	where_, args_ = Default.AppendWhere(where, args, ok, format, v)
 	return
 }
 
+// AppendWhere appends a field and its parameter to the WHERE clause.
 func (c *CRUD) AppendWhere(where []string, args []any, ok bool, format string, v any) (where_ []string, args_ []any) {
 	where_, args_ = where, args
 	if ok {
-		args_ = append(args_, c.ParmConv("where", format, "", reflect.StructField{}, v))
+		args_ = append(args_, c.ParamConv("where", format, "", reflect.StructField{}, v))
 		where_ = append(where_, c.Sprintf(format, len(args_)))
 	}
 	return
 }
 
+// AppendWheref appends multiple fields and their parameters to the WHERE clause.
 func AppendWheref(where []string, args []any, format string, v ...any) (where_ []string, args_ []any) {
 	where_, args_ = Default.AppendWheref(where, args, format, v...)
 	return
 }
 
+// AppendWheref appends multiple fields and their parameters to the WHERE clause.
 func (c *CRUD) AppendWheref(where []string, args []any, formats string, v ...any) (where_ []string, args_ []any) {
 	where_, args_ = where, args
 	c.FilterFormatCall(formats, v, func(format string, arg any) {
-		args_ = append(args_, c.ParmConv("where", format, "", reflect.StructField{}, arg))
+		args_ = append(args_, c.ParamConv("where", format, "", reflect.StructField{}, arg))
 		where_ = append(where_, c.Sprintf(format, len(args_)))
 	})
 	return
 }
 
+// AppendWhereUnify appends a unified WHERE clause based on the provided value and enabled fields.
 func AppendWhereUnify(where []string, args []any, v any, enabled ...string) (where_ []string, args_ []any) {
 	where_, args_ = Default.AppendWhereUnify(where, args, v, enabled...)
 	return
 }
 
+// AppendWhereUnify appends a unified WHERE clause based on the provided value and enabled fields.
 func (c *CRUD) AppendWhereUnify(where []string, args []any, v any, enabled ...string) (where_ []string, args_ []any) {
 	where_, args_ = where, args
 	reflectValue := reflect.Indirect(reflect.ValueOf(v))
@@ -449,11 +496,13 @@ func (c *CRUD) AppendWhereUnify(where []string, args []any, v any, enabled ...st
 	return
 }
 
+// JoinWhere constructs a WHERE clause based on the provided SQL and conditions.
 func JoinWhere(sql string, where []string, sep string, suffix ...string) (sql_ string) {
 	sql_ = Default.joinWhere(1, sql, where, sep, suffix...)
 	return
 }
 
+// JoinWhere constructs a WHERE clause based on the provided SQL and conditions.
 func (c *CRUD) JoinWhere(sql string, where []string, sep string, suffix ...string) (sql_ string) {
 	sql_ = c.joinWhere(1, sql, where, sep, suffix...)
 	return
@@ -473,11 +522,13 @@ func (c *CRUD) joinWhere(caller int, sql string, where []string, sep string, suf
 	return
 }
 
+// JoinWheref constructs a WHERE clause based on the provided SQL and formatted conditions.
 func JoinWheref(sql string, args []any, formats string, formatArgs ...any) (sql_ string, args_ []any) {
 	sql_, args_ = Default.joinWheref(1, sql, args, formats, formatArgs...)
 	return
 }
 
+// JoinWheref constructs a WHERE clause based on the provided SQL and formatted conditions.
 func (c *CRUD) JoinWheref(sql string, args []any, formats string, formatArgs ...any) (sql_ string, args_ []any) {
 	sql_, args_ = c.joinWheref(1, sql, args, formats, formatArgs...)
 	return
@@ -505,11 +556,13 @@ func (c *CRUD) joinWheref(caller int, sql string, args []any, formats string, fo
 	return
 }
 
+// JoinWhereUnify constructs a unified WHERE clause based on the provided SQL and value.
 func JoinWhereUnify(sql string, args []any, v any, enabled ...string) (sql_ string, args_ []any) {
 	sql_, args_ = Default.joinWhereUnify(1, sql, args, v, enabled...)
 	return
 }
 
+// JoinWhereUnify constructs a unified WHERE clause based on the provided SQL and value.
 func (c *CRUD) JoinWhereUnify(sql string, args []any, v any, enabled ...string) (sql_ string, args_ []any) {
 	sql_, args_ = c.joinWhereUnify(1, sql, args, v, enabled...)
 	return
@@ -532,42 +585,43 @@ func (c *CRUD) joinWhereUnify(caller int, sql string, args []any, v any, enabled
 	return
 }
 
+// JoinPage constructs a paginated SQL query based on the provided SQL, orderby, offset, and limit.
 func JoinPage(sql, orderby string, offset, limit int) (sql_ string) {
 	sql_ = Default.joinPage(1, sql, orderby, offset, limit)
 	return
 }
 
-func (c *CRUD) JoinPage(sql, orderby string, offset, limit int) (sql_ string) {
-	sql_ = c.joinPage(1, sql, orderby, offset, limit)
-	return
+// JoinPage constructs a paginated SQL query based on the provided SQL, orderby, offset, and limit.
+func (c *CRUD) JoinPage(sql, orderby string, offset, limit int) string {
+	return c.joinPage(1, sql, orderby, offset, limit)
 }
 
-func (c *CRUD) joinPage(caller int, sql, orderby string, offset, limit int) (sql_ string) {
-	sql_ = sql
+func (c *CRUD) joinPage(caller int, sql, orderby string, offset, limit int) (pagedSQL string) {
+	pagedSQL = sql
 	if len(orderby) > 0 && (offset >= 0 || limit > 0) {
-		sql_ += " " + orderby
+		pagedSQL += " " + orderby
 	}
 	if limit > 0 {
-		sql_ += fmt.Sprintf(" limit %v offset %v", limit, offset)
+		pagedSQL += fmt.Sprintf(" limit %v offset %v", limit, offset)
 	}
 	if c.Verbose {
-		c.Log(caller, "CRUD join page done with sql:%v", sql_)
+		c.Log(caller, "CRUD join page done with sql:%v", pagedSQL)
 	}
 	return
 }
 
-func JoinPageUnify(sql string, v any) (sql_ string) {
-	sql_ = Default.joinPageUnify(1, sql, v)
-	return
+// JoinPageUnify constructs a unified paginated SQL query based on the provided SQL and value.
+func JoinPageUnify(sql string, v any) string {
+	return Default.joinPageUnify(1, sql, v)
 }
 
-func (c *CRUD) JoinPageUnify(sql string, v any) (sql_ string) {
-	sql_ = c.joinPageUnify(1, sql, v)
-	return
+// JoinPageUnify constructs a unified paginated SQL query based on the provided SQL and value.
+func (c *CRUD) JoinPageUnify(sql string, v any) string {
+	return c.joinPageUnify(1, sql, v)
 }
 
-func (c *CRUD) joinPageUnify(caller int, sql string, v any) (sql_ string) {
-	sql_ = sql
+func (c *CRUD) joinPageUnify(caller int, sql string, v any) (joinedSQL string) {
+	joinedSQL = sql
 	reflectValue := reflect.Indirect(reflect.ValueOf(v))
 	reflectType := reflectValue.Type()
 	pageValue := reflectValue.FieldByName("Page")
@@ -595,26 +649,26 @@ func (c *CRUD) joinPageUnify(caller int, sql string, v any) (sql_ string) {
 	if limitValue.IsValid() {
 		limit = int(limitValue.Int())
 	}
-	sql_ = c.joinPage(caller+1, sql_, order, offset, limit)
+	joinedSQL = c.joinPage(caller+1, joinedSQL, order, offset, limit)
 	return
 }
 
-func (c *CRUD) queryerExec(queryer any, ctx context.Context, sql string, args []any) (insertId, affected int64, err error) {
+func (c *CRUD) queryerExec(ctx context.Context, queryer any, sql string, args []any) (insertID, affected int64, err error) {
 	reflectValue := reflect.ValueOf(queryer)
 	if reflectValue.Kind() == reflect.Func {
 		queryer = reflectValue.Call(nil)[0].Interface()
 	}
 	if q, ok := queryer.(Queryer); ok {
-		insertId, affected, err = q.Exec(ctx, sql, args...)
+		insertID, affected, err = q.Exec(ctx, sql, args...)
 	} else if q, ok := queryer.(CrudQueryer); ok {
-		insertId, affected, err = q.CrudExec(ctx, sql, args...)
+		insertID, affected, err = q.CrudExec(ctx, sql, args...)
 	} else {
 		panic("queryer is not supported")
 	}
 	return
 }
 
-func (c *CRUD) queryerQuery(queryer any, ctx context.Context, sql string, args []any) (rows Rows, err error) {
+func (c *CRUD) queryerQuery(ctx context.Context, queryer any, sql string, args []any) (rows Rows, err error) {
 	reflectValue := reflect.ValueOf(queryer)
 	if reflectValue.Kind() == reflect.Func {
 		queryer = reflectValue.Call(nil)[0].Interface()
@@ -629,7 +683,7 @@ func (c *CRUD) queryerQuery(queryer any, ctx context.Context, sql string, args [
 	return
 }
 
-func (c *CRUD) queryerQueryRow(queryer any, ctx context.Context, sql string, args []any) (row Row) {
+func (c *CRUD) queryerQueryRow(ctx context.Context, queryer any, sql string, args []any) (row Row) {
 	reflectValue := reflect.ValueOf(queryer)
 	if reflectValue.Kind() == reflect.Func {
 		queryer = reflectValue.Call(nil)[0].Interface()
@@ -644,11 +698,13 @@ func (c *CRUD) queryerQueryRow(queryer any, ctx context.Context, sql string, arg
 	return
 }
 
+// InsertArgs generates the insert arguments based on the provided value and filter.
 func InsertArgs(v any, filter string, args []any) (table string, fields, param []string, args_ []any) {
 	table, fields, param, args_ = Default.insertArgs(1, v, filter, args)
 	return
 }
 
+// InsertArgs generates the insert arguments based on the provided value and filter.
 func (c *CRUD) InsertArgs(v any, filter string, args []any) (table string, fields, param []string, args_ []any) {
 	table, fields, param, args_ = c.insertArgs(1, v, filter, args)
 	return
@@ -657,7 +713,7 @@ func (c *CRUD) InsertArgs(v any, filter string, args []any) (table string, field
 func (c *CRUD) insertArgs(caller int, v any, filter string, args []any) (table string, fields, param []string, args_ []any) {
 	args_ = args
 	table = c.FilterFieldCall("insert", v, filter, func(fieldName, fieldFunc string, field reflect.StructField, value any) {
-		args_ = append(args_, c.ParmConv("insert", fieldName, fieldFunc, field, value))
+		args_ = append(args_, c.ParamConv("insert", fieldName, fieldFunc, field, value))
 		fields = append(fields, fieldName)
 		param = append(param, fmt.Sprintf(c.ArgFormat, len(args_)))
 	})
@@ -667,11 +723,13 @@ func (c *CRUD) insertArgs(caller int, v any, filter string, args []any) (table s
 	return
 }
 
+// InsertSQL generates the SQL statement for inserting a record based on the provided value and filter.
 func InsertSQL(v any, filter string, suffix ...string) (sql string, args []any) {
 	sql, args = Default.insertSQL(1, v, filter, suffix...)
 	return
 }
 
+// InsertSQL generates the SQL statement for inserting a record based on the provided value and filter.
 func (c *CRUD) InsertSQL(v any, filter string, suffix ...string) (sql string, args []any) {
 	sql, args = c.insertSQL(1, v, filter, suffix...)
 	return
@@ -686,24 +744,26 @@ func (c *CRUD) insertSQL(caller int, v any, filter string, suffix ...string) (sq
 	return
 }
 
-func InsertFilter(queryer any, ctx context.Context, v any, filter, join, scan string) (insertId int64, err error) {
-	insertId, err = Default.insertFilter(1, queryer, ctx, v, filter, join, scan)
+// InsertFilter inserts a record into the database with filtering options and returns the inserted ID.
+func InsertFilter(ctx context.Context, queryer any, v any, filter, join, scan string) (insertID int64, err error) {
+	insertID, err = Default.insertFilter(ctx, 1, queryer, v, filter, join, scan)
 	return
 }
 
-func (c *CRUD) InsertFilter(queryer any, ctx context.Context, v any, filter, join, scan string) (insertId int64, err error) {
-	insertId, err = c.insertFilter(1, queryer, ctx, v, filter, join, scan)
+// InsertFilter inserts a record into the database with filtering options and returns the inserted ID.
+func (c *CRUD) InsertFilter(ctx context.Context, queryer any, v any, filter, join, scan string) (insertID int64, err error) {
+	insertID, err = c.insertFilter(ctx, 1, queryer, v, filter, join, scan)
 	return
 }
 
-func (c *CRUD) insertFilter(caller int, queryer any, ctx context.Context, v any, filter, join, scan string) (insertId int64, err error) {
+func (c *CRUD) insertFilter(ctx context.Context, caller int, queryer any, v any, filter, join, scan string) (insertID int64, err error) {
 	table, fields, param, args := c.insertArgs(caller+1, v, filter, nil)
 	sql := fmt.Sprintf(`insert into %v(%v) values(%v)`, table, strings.Join(fields, ","), strings.Join(param, ","))
 	if len(scan) < 1 {
 		if len(join) > 0 {
 			sql += " " + join
 		}
-		insertId, _, err = c.queryerExec(queryer, ctx, sql, args)
+		insertID, _, err = c.queryerExec(ctx, queryer, sql, args)
 		if err != nil {
 			if c.Verbose {
 				c.Log(caller, "CRUD insert filter by struct:%v,sql:%v, result is fail:%v", reflect.TypeOf(v), sql, err)
@@ -721,7 +781,7 @@ func (c *CRUD) insertFilter(caller int, queryer any, ctx context.Context, v any,
 		sql += " " + join
 	}
 	sql += " " + strings.Join(scanFields, ",")
-	err = c.queryerQueryRow(queryer, ctx, sql, args).Scan(scanArgs...)
+	err = c.queryerQueryRow(ctx, queryer, sql, args).Scan(scanArgs...)
 	if err != nil {
 		if c.Verbose {
 			c.Log(caller, "CRUD insert filter by struct:%v,sql:%v, result is fail:%v", reflect.TypeOf(v), sql, err)
@@ -734,11 +794,13 @@ func (c *CRUD) insertFilter(caller int, queryer any, ctx context.Context, v any,
 	return
 }
 
+// UpdateArgs generates the arguments for updating a record based on the provided value and filter.
 func UpdateArgs(v any, filter string, args []any) (table string, sets []string, args_ []any) {
 	table, sets, args_ = Default.updateArgs(1, v, filter, args)
 	return
 }
 
+// UpdateArgs generates the arguments for updating a record based on the provided value and filter.
 func (c *CRUD) UpdateArgs(v any, filter string, args []any) (table string, sets []string, args_ []any) {
 	table, sets, args_ = c.updateArgs(1, v, filter, args)
 	return
@@ -747,7 +809,7 @@ func (c *CRUD) UpdateArgs(v any, filter string, args []any) (table string, sets 
 func (c *CRUD) updateArgs(caller int, v any, filter string, args []any) (table string, sets []string, args_ []any) {
 	args_ = args
 	table = c.FilterFieldCall("update", v, filter, func(fieldName, fieldFunc string, field reflect.StructField, value any) {
-		args_ = append(args_, c.ParmConv("update", fieldName, fieldFunc, field, value))
+		args_ = append(args_, c.ParamConv("update", fieldName, fieldFunc, field, value))
 		sets = append(sets, fmt.Sprintf("%v="+c.ArgFormat, fieldName, len(args_)))
 	})
 	if c.Verbose {
@@ -756,11 +818,13 @@ func (c *CRUD) updateArgs(caller int, v any, filter string, args []any) (table s
 	return
 }
 
+// UpdateSQL generates the SQL statement for updating a record based on the provided value and filter.
 func UpdateSQL(v any, filter string, args []any, suffix ...string) (sql string, args_ []any) {
 	sql, args_ = Default.updateSQL(1, v, filter, args, suffix...)
 	return
 }
 
+// UpdateSQL generates the SQL statement for updating a record based on the provided value and filter.
 func (c *CRUD) UpdateSQL(v any, filter string, args []any, suffix ...string) (sql string, args_ []any) {
 	sql, args_ = c.updateSQL(1, v, filter, args, suffix...)
 	return
@@ -775,19 +839,21 @@ func (c *CRUD) updateSQL(caller int, v any, filter string, args []any, suffix ..
 	return
 }
 
-func Update(queryer any, ctx context.Context, v any, sql string, where []string, sep string, args []any) (affected int64, err error) {
-	affected, err = Default.update(1, queryer, ctx, v, sql, where, sep, args)
+// Update updates a record in the database using the provided SQL and conditions, returning the number of affected rows.
+func Update(ctx context.Context, queryer any, v any, sql string, where []string, sep string, args []any) (affected int64, err error) {
+	affected, err = Default.update(ctx, 1, queryer, v, sql, where, sep, args)
 	return
 }
 
-func (c *CRUD) Update(queryer any, ctx context.Context, v any, sql string, where []string, sep string, args []any) (affected int64, err error) {
-	affected, err = c.update(1, queryer, ctx, v, sql, where, sep, args)
+// Update updates a record in the database using the provided SQL and conditions, returning the number of affected rows.
+func (c *CRUD) Update(ctx context.Context, queryer any, v any, sql string, where []string, sep string, args []any) (affected int64, err error) {
+	affected, err = c.update(ctx, 1, queryer, v, sql, where, sep, args)
 	return
 }
 
-func (c *CRUD) update(caller int, queryer any, ctx context.Context, v any, sql string, where []string, sep string, args []any) (affected int64, err error) {
+func (c *CRUD) update(ctx context.Context, caller int, queryer any, v any, sql string, where []string, sep string, args []any) (affected int64, err error) {
 	sql = c.joinWhere(caller+1, sql, where, sep)
-	_, affected, err = c.queryerExec(queryer, ctx, sql, args)
+	_, affected, err = c.queryerExec(ctx, queryer, sql, args)
 	if err != nil {
 		if c.Verbose {
 			c.Log(caller, "CRUD update by struct:%v,sql:%v,args:%v, result is fail:%v", reflect.TypeOf(v), sql, jsonString(args), err)
@@ -800,39 +866,43 @@ func (c *CRUD) update(caller int, queryer any, ctx context.Context, v any, sql s
 	return
 }
 
-func UpdateRow(queryer any, ctx context.Context, v any, sql string, where []string, sep string, args []any) (err error) {
-	err = Default.updateRow(1, queryer, ctx, v, sql, where, sep, args)
+// UpdateRow updates a single record in the database using the provided SQL and conditions, expecting exactly one row to be affected.
+func UpdateRow(ctx context.Context, queryer any, v any, sql string, where []string, sep string, args []any) (err error) {
+	err = Default.updateRow(ctx, 1, queryer, v, sql, where, sep, args)
 	return
 }
 
-func (c *CRUD) UpdateRow(queryer any, ctx context.Context, v any, sql string, where []string, sep string, args []any) (err error) {
-	err = c.updateRow(1, queryer, ctx, v, sql, where, sep, args)
+// UpdateRow updates a single record in the database using the provided SQL and conditions, expecting exactly one row to be affected.
+func (c *CRUD) UpdateRow(ctx context.Context, queryer any, v any, sql string, where []string, sep string, args []any) (err error) {
+	err = c.updateRow(ctx, 1, queryer, v, sql, where, sep, args)
 	return
 }
 
-func (c *CRUD) updateRow(caller int, queryer any, ctx context.Context, v any, sql string, where []string, sep string, args []any) (err error) {
-	affected, err := c.update(caller+1, queryer, ctx, v, sql, where, sep, args)
+func (c *CRUD) updateRow(ctx context.Context, caller int, queryer any, v any, sql string, where []string, sep string, args []any) (err error) {
+	affected, err := c.update(ctx, caller+1, queryer, v, sql, where, sep, args)
 	if err == nil && affected < 1 {
 		err = c.getErrNoRows()
 	}
 	return
 }
 
-func UpdateSet(queryer any, ctx context.Context, v any, sets, where []string, sep string, args []any) (affected int64, err error) {
-	affected, err = Default.updateSet(1, queryer, ctx, v, sets, where, sep, args)
+// UpdateSet updates a record in the database using a set of fields and conditions, returning the number of affected rows.
+func UpdateSet(ctx context.Context, queryer any, v any, sets, where []string, sep string, args []any) (affected int64, err error) {
+	affected, err = Default.updateSet(ctx, 1, queryer, v, sets, where, sep, args)
 	return
 }
 
-func (c *CRUD) UpdateSet(queryer any, ctx context.Context, v any, sets, where []string, sep string, args []any) (affected int64, err error) {
-	affected, err = c.updateSet(1, queryer, ctx, v, sets, where, sep, args)
+// UpdateSet updates a record in the database using a set of fields and conditions.
+func (c *CRUD) UpdateSet(ctx context.Context, queryer any, v any, sets, where []string, sep string, args []any) (affected int64, err error) {
+	affected, err = c.updateSet(ctx, 1, queryer, v, sets, where, sep, args)
 	return
 }
 
-func (c *CRUD) updateSet(caller int, queryer any, ctx context.Context, v any, sets, where []string, sep string, args []any) (affected int64, err error) {
+func (c *CRUD) updateSet(ctx context.Context, caller int, queryer any, v any, sets, where []string, sep string, args []any) (affected int64, err error) {
 	table := c.Table(v)
 	sql := fmt.Sprintf(`update %v set %v`, table, strings.Join(sets, ","))
 	sql = c.joinWhere(caller+1, sql, where, sep)
-	_, affected, err = c.queryerExec(queryer, ctx, sql, args)
+	_, affected, err = c.queryerExec(ctx, queryer, sql, args)
 	if err != nil {
 		if c.Verbose {
 			c.Log(caller, "CRUD update by struct:%v,sql:%v,args:%v, result is fail:%v", reflect.TypeOf(v), sql, jsonString(args), err)
@@ -845,38 +915,41 @@ func (c *CRUD) updateSet(caller int, queryer any, ctx context.Context, v any, se
 	return
 }
 
-func UpdateRowSet(queryer any, ctx context.Context, v any, sets, where []string, sep string, args []any) (err error) {
-	err = Default.updateRowSet(1, queryer, ctx, v, sets, where, sep, args)
+// UpdateRowSet updates a record in the database using a set of fields and conditions, expecting exactly one row to be affected.
+func UpdateRowSet(ctx context.Context, queryer any, v any, sets, where []string, sep string, args []any) (err error) {
+	err = Default.updateRowSet(ctx, 1, queryer, v, sets, where, sep, args)
 	return
 }
 
-func (c *CRUD) UpdateRowSet(queryer any, ctx context.Context, v any, sets, where []string, sep string, args []any) (err error) {
-	err = c.updateRowSet(1, queryer, ctx, v, sets, where, sep, args)
+// UpdateRowSet updates a record in the database using a set of fields and conditions, expecting exactly one row to be affected.
+func (c *CRUD) UpdateRowSet(ctx context.Context, queryer any, v any, sets, where []string, sep string, args []any) (err error) {
+	err = c.updateRowSet(ctx, 1, queryer, v, sets, where, sep, args)
 	return
 }
 
-func (c *CRUD) updateRowSet(caller int, queryer any, ctx context.Context, v any, sets, where []string, sep string, args []any) (err error) {
-	affected, err := c.updateSet(caller+1, queryer, ctx, v, sets, where, sep, args)
+func (c *CRUD) updateRowSet(ctx context.Context, caller int, queryer any, v any, sets, where []string, sep string, args []any) (err error) {
+	affected, err := c.updateSet(ctx, caller+1, queryer, v, sets, where, sep, args)
 	if err == nil && affected < 1 {
 		err = c.getErrNoRows()
 	}
 	return
 }
 
-func UpdateFilter(queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any) (affected int64, err error) {
-	affected, err = Default.updateFilter(1, queryer, ctx, v, filter, where, sep, args)
+// UpdateFilter updates records in the database based on a filter and conditions, returning the number of affected rows.
+func UpdateFilter(ctx context.Context, queryer any, v any, filter string, where []string, sep string, args []any) (affected int64, err error) {
+	affected, err = Default.updateFilter(ctx, 1, queryer, v, filter, where, sep, args)
 	return
 }
 
-func (c *CRUD) UpdateFilter(queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any) (affected int64, err error) {
-	affected, err = c.updateFilter(1, queryer, ctx, v, filter, where, sep, args)
+func (c *CRUD) UpdateFilter(ctx context.Context, queryer any, v any, filter string, where []string, sep string, args []any) (affected int64, err error) {
+	affected, err = c.updateFilter(ctx, 1, queryer, v, filter, where, sep, args)
 	return
 }
 
-func (c *CRUD) updateFilter(caller int, queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any) (affected int64, err error) {
+func (c *CRUD) updateFilter(ctx context.Context, caller int, queryer any, v any, filter string, where []string, sep string, args []any) (affected int64, err error) {
 	sql, args := c.updateSQL(caller+1, v, filter, args)
 	sql = c.joinWhere(caller+1, sql, where, sep)
-	_, affected, err = c.queryerExec(queryer, ctx, sql, args)
+	_, affected, err = c.queryerExec(ctx, queryer, sql, args)
 	if err != nil {
 		if c.Verbose {
 			c.Log(caller, "CRUD update filter by struct:%v,sql:%v,args:%v, result is fail:%v", reflect.TypeOf(v), sql, jsonString(args), err)
@@ -889,38 +962,41 @@ func (c *CRUD) updateFilter(caller int, queryer any, ctx context.Context, v any,
 	return
 }
 
-func UpdateRowFilter(queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any) (err error) {
-	err = Default.updateRowFilter(1, queryer, ctx, v, filter, where, sep, args)
+// UpdateRowFilter updates a record in the database based on a filter and conditions, expecting exactly one row to be affected.
+func UpdateRowFilter(ctx context.Context, queryer any, v any, filter string, where []string, sep string, args []any) (err error) {
+	err = Default.updateRowFilter(ctx, 1, queryer, v, filter, where, sep, args)
 	return
 }
 
-func (c *CRUD) UpdateRowFilter(queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any) (err error) {
-	err = c.updateRowFilter(1, queryer, ctx, v, filter, where, sep, args)
+// UpdateRowFilter updates a record in the database based on a filter and conditions, expecting exactly one row to be affected.
+func (c *CRUD) UpdateRowFilter(ctx context.Context, queryer any, v any, filter string, where []string, sep string, args []any) (err error) {
+	err = c.updateRowFilter(ctx, 1, queryer, v, filter, where, sep, args)
 	return
 }
 
-func (c *CRUD) updateRowFilter(caller int, queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any) (err error) {
-	affected, err := c.updateFilter(caller+1, queryer, ctx, v, filter, where, sep, args)
+func (c *CRUD) updateRowFilter(ctx context.Context, caller int, queryer any, v any, filter string, where []string, sep string, args []any) (err error) {
+	affected, err := c.updateFilter(ctx, caller+1, queryer, v, filter, where, sep, args)
 	if err == nil && affected < 1 {
 		err = c.getErrNoRows()
 	}
 	return
 }
 
-func UpdateWheref(queryer any, ctx context.Context, v any, filter, formats string, args ...any) (affected int64, err error) {
-	affected, err = Default.updateWheref(1, queryer, ctx, v, filter, formats, args...)
+// UpdateWheref updates records in the database based on a filter and formatted conditions, returning the number of affected rows.
+func UpdateWheref(ctx context.Context, queryer any, v any, filter, formats string, args ...any) (affected int64, err error) {
+	affected, err = Default.updateWheref(ctx, 1, queryer, v, filter, formats, args...)
 	return
 }
 
-func (c *CRUD) UpdateWheref(queryer any, ctx context.Context, v any, filter, formats string, args ...any) (affected int64, err error) {
-	affected, err = c.updateWheref(1, queryer, ctx, v, filter, formats, args...)
+func (c *CRUD) UpdateWheref(ctx context.Context, queryer any, v any, filter, formats string, args ...any) (affected int64, err error) {
+	affected, err = c.updateWheref(ctx, 1, queryer, v, filter, formats, args...)
 	return
 }
 
-func (c *CRUD) updateWheref(caller int, queryer any, ctx context.Context, v any, filter, formats string, args ...any) (affected int64, err error) {
+func (c *CRUD) updateWheref(ctx context.Context, caller int, queryer any, v any, filter, formats string, args ...any) (affected int64, err error) {
 	sql, sqlArgs := c.updateSQL(caller+1, v, filter, nil)
 	sql, sqlArgs = c.joinWheref(caller+1, sql, sqlArgs, formats, args...)
-	_, affected, err = c.queryerExec(queryer, ctx, sql, sqlArgs)
+	_, affected, err = c.queryerExec(ctx, queryer, sql, sqlArgs)
 	if err != nil {
 		if c.Verbose {
 			c.Log(caller, "CRUD update wheref by struct:%v,sql:%v,args:%v, result is fail:%v", reflect.TypeOf(v), sql, jsonString(sqlArgs), err)
@@ -933,29 +1009,33 @@ func (c *CRUD) updateWheref(caller int, queryer any, ctx context.Context, v any,
 	return
 }
 
-func UpdateRowWheref(queryer any, ctx context.Context, v any, filter, formats string, args ...any) (err error) {
-	err = Default.updateRowWheref(1, queryer, ctx, v, filter, formats, args...)
+// UpdateRowWheref updates a record in the database based on a filter and formatted conditions, expecting exactly one row to be affected.
+func UpdateRowWheref(ctx context.Context, queryer any, v any, filter, formats string, args ...any) (err error) {
+	err = Default.updateRowWheref(ctx, 1, queryer, v, filter, formats, args...)
 	return
 }
 
-func (c *CRUD) UpdateRowWheref(queryer any, ctx context.Context, v any, filter, formats string, args ...any) (err error) {
-	err = c.updateRowWheref(1, queryer, ctx, v, filter, formats, args...)
+// UpdateRowWheref updates a record in the database based on a filter and formatted conditions, expecting exactly one row to be affected.
+func (c *CRUD) UpdateRowWheref(ctx context.Context, queryer any, v any, filter, formats string, args ...any) (err error) {
+	err = c.updateRowWheref(ctx, 1, queryer, v, filter, formats, args...)
 	return
 }
 
-func (c *CRUD) updateRowWheref(caller int, queryer any, ctx context.Context, v any, filter, formats string, args ...any) (err error) {
-	affected, err := c.updateWheref(caller+1, queryer, ctx, v, filter, formats, args...)
+func (c *CRUD) updateRowWheref(ctx context.Context, caller int, queryer any, v any, filter, formats string, args ...any) (err error) {
+	affected, err := c.updateWheref(ctx, caller+1, queryer, v, filter, formats, args...)
 	if err == nil && affected < 1 {
 		err = c.getErrNoRows()
 	}
 	return
 }
 
+// QueryField generates the table name and fields for a query based on the provided value and filter.
 func QueryField(v any, filter string) (table string, fields []string) {
 	table, fields = Default.queryField(1, v, filter)
 	return
 }
 
+// QueryField generates the table name and fields for a query based on the provided value and filter.
 func (c *CRUD) QueryField(v any, filter string) (table string, fields []string) {
 	table, fields = c.queryField(1, v, filter)
 	return
@@ -976,11 +1056,13 @@ func (c *CRUD) queryField(caller int, v any, filter string) (table string, field
 	return
 }
 
+// QuerySQL generates the SQL statement for querying a record based on the provided value and filter.
 func QuerySQL(v any, filter string, suffix ...string) (sql string) {
 	sql = Default.querySQL(1, v, "", filter, suffix...)
 	return
 }
 
+// QuerySQL generates the SQL statement for querying a record based on the provided value and filter.
 func (c *CRUD) QuerySQL(v any, filter string, suffix ...string) (sql string) {
 	sql = c.querySQL(1, v, "", filter, suffix...)
 	return
@@ -1001,11 +1083,13 @@ func (c *CRUD) querySQL(caller int, v any, from, filter string, suffix ...string
 	return
 }
 
+// QueryUnifySQL generates a unified SQL query based on the provided value and field.
 func QueryUnifySQL(v any, field string) (sql string, args []any) {
 	sql, args = Default.queryUnifySQL(1, v, field)
 	return
 }
 
+// QueryUnifySQL generates a unified SQL query based on the provided value and field.
 func (c *CRUD) QueryUnifySQL(v any, field string) (sql string, args []any) {
 	sql, args = c.queryUnifySQL(1, v, field)
 	return
@@ -1053,23 +1137,27 @@ func (c *CRUD) queryUnifySQL(caller int, v any, field string) (sql string, args 
 	return
 }
 
+// ScanArgs generates the arguments for scanning a record based on the provided value and filter.
 func ScanArgs(v any, filter string) (args []any) {
 	args = Default.ScanArgs(v, filter)
 	return
 }
 
+// ScanArgs generates the arguments for scanning a record based on the provided value and filter.
 func (c *CRUD) ScanArgs(v any, filter string) (args []any) {
 	c.FilterFieldCall("scan", v, filter, func(fieldName, fieldFunc string, field reflect.StructField, value any) {
-		args = append(args, c.ParmConv("scan", fieldName, fieldFunc, field, value))
+		args = append(args, c.ParamConv("scan", fieldName, fieldFunc, field, value))
 	})
 	return
 }
 
+// ScanUnifyDest scans a unified destination based on the provided value and query name.
 func ScanUnifyDest(v any, queryName string) (modelValue any, queryFilter string, dests []any) {
 	modelValue, queryFilter, dests = Default.ScanUnifyDest(v, queryName)
 	return
 }
 
+// ScanUnifyDest scans a unified destination based on the provided value and query name.
 func (c *CRUD) ScanUnifyDest(v any, queryName string) (modelValue any, queryFilter string, dests []any) {
 	reflectValue := reflect.Indirect(reflect.ValueOf(v))
 	reflectType := reflectValue.Type()
@@ -1313,11 +1401,13 @@ func (c *CRUD) destSet(value reflect.Value, filter string, dests ...any) (err er
 	return
 }
 
+// Scan scans the rows into the provided value based on the filter and destination arguments.
 func Scan(rows Rows, v any, filter string, dest ...any) (err error) {
 	err = Default.Scan(rows, v, filter, dest...)
 	return
 }
 
+// Scan scans the rows into the provided value based on the filter and destination arguments.
 func (c *CRUD) Scan(rows Rows, v any, filter string, dest ...any) (err error) {
 	isPtr := reflect.ValueOf(v).Kind() == reflect.Ptr
 	isStruct := reflect.Indirect(reflect.ValueOf(v)).Kind() == reflect.Struct
@@ -1338,21 +1428,25 @@ func (c *CRUD) Scan(rows Rows, v any, filter string, dest ...any) (err error) {
 	return
 }
 
+// ScanUnify scans the rows into a unified structure based on the provided value.
 func ScanUnify(rows Rows, v any) (err error) {
 	err = Default.ScanUnify(rows, v)
 	return
 }
 
+// ScanUnifyTarget scans the rows into a unified structure based on the provided value and target.
 func ScanUnifyTarget(rows Rows, v any, target string) (err error) {
 	err = Default.ScanUnifyTarget(rows, v, target)
 	return
 }
 
+// ScanUnify scans the rows into a unified structure based on the provided value and target.
 func (c *CRUD) ScanUnify(rows Rows, v any) (err error) {
 	err = c.scanUnify(rows, v, "Query")
 	return
 }
 
+// ScanUnifyTarget scans the rows into a unified structure based on the provided value and target.
 func (c *CRUD) ScanUnifyTarget(rows Rows, v any, target string) (err error) {
 	err = c.scanUnify(rows, v, target)
 	return
@@ -1364,18 +1458,19 @@ func (c *CRUD) scanUnify(rows Rows, v any, target string) (err error) {
 	return
 }
 
-func Query(queryer any, ctx context.Context, v any, filter, sql string, args []any, dest ...any) (err error) {
-	err = Default.query(1, queryer, ctx, v, filter, sql, args, dest...)
+// Query executes a query on the database and scans the results into the provided value.
+func Query(ctx context.Context, queryer any, v any, filter, sql string, args []any, dest ...any) (err error) {
+	err = Default.query(ctx, 1, queryer, v, filter, sql, args, dest...)
 	return
 }
 
-func (c *CRUD) Query(queryer any, ctx context.Context, v any, filter, sql string, args []any, dest ...any) (err error) {
-	err = c.query(1, queryer, ctx, v, filter, sql, args, dest...)
+func (c *CRUD) Query(ctx context.Context, queryer any, v any, filter, sql string, args []any, dest ...any) (err error) {
+	err = c.query(ctx, 1, queryer, v, filter, sql, args, dest...)
 	return
 }
 
-func (c *CRUD) query(caller int, queryer any, ctx context.Context, v any, filter, sql string, args []any, dest ...any) (err error) {
-	rows, err := c.queryerQuery(queryer, ctx, sql, args)
+func (c *CRUD) query(ctx context.Context, caller int, queryer any, v any, filter, sql string, args []any, dest ...any) (err error) {
+	rows, err := c.queryerQuery(ctx, queryer, sql, args)
 	if err != nil {
 		if c.Verbose {
 			c.Log(caller, "CRUD query by struct:%v,filter:%v,sql:%v,args:%v result is fail:%v", reflect.TypeOf(v), filter, sql, jsonString(args), err)
@@ -1390,65 +1485,70 @@ func (c *CRUD) query(caller int, queryer any, ctx context.Context, v any, filter
 	return
 }
 
-func QueryFilter(queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
-	err = Default.queryFilter(1, queryer, ctx, v, filter, where, sep, args, orderby, offset, limit, dest...)
+// QueryFilter executes a query with a filter and scans the results into the provided value.
+func QueryFilter(ctx context.Context, queryer any, v any, filter string, where []string, sep string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
+	err = Default.queryFilter(ctx, 1, queryer, v, filter, where, sep, args, orderby, offset, limit, dest...)
 	return
 }
 
-func (c *CRUD) QueryFilter(queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
-	err = c.queryFilter(1, queryer, ctx, v, filter, where, sep, args, orderby, offset, limit, dest...)
+// QueryFilter executes a query with a filter and scans the results into the provided value.
+func (c *CRUD) QueryFilter(ctx context.Context, queryer any, v any, filter string, where []string, sep string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
+	err = c.queryFilter(ctx, 1, queryer, v, filter, where, sep, args, orderby, offset, limit, dest...)
 	return
 }
 
-func (c *CRUD) queryFilter(caller int, queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
+func (c *CRUD) queryFilter(ctx context.Context, caller int, queryer any, v any, filter string, where []string, sep string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
 	sql := c.querySQL(caller+1, v, "", filter)
 	sql = c.joinWhere(caller+1, sql, where, sep)
 	sql = c.joinPage(caller+1, sql, orderby, offset, limit)
-	err = c.query(caller+1, queryer, ctx, v, filter, sql, args, dest...)
+	err = c.query(ctx, caller+1, queryer, v, filter, sql, args, dest...)
 	return
 }
 
-func QueryWheref(queryer any, ctx context.Context, v any, filter, formats string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
-	err = Default.queryWheref(1, queryer, ctx, v, filter, formats, args, orderby, offset, limit, dest...)
+// QueryWheref executes a query with a filter and formatted conditions, scanning the results into the provided value.
+func QueryWheref(ctx context.Context, queryer any, v any, filter, formats string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
+	err = Default.queryWheref(ctx, 1, queryer, v, filter, formats, args, orderby, offset, limit, dest...)
 	return
 }
 
-func (c *CRUD) QueryWheref(queryer any, ctx context.Context, v any, filter, formats string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
-	err = c.queryWheref(1, queryer, ctx, v, filter, formats, args, orderby, offset, limit, dest...)
+// QueryWheref executes a query with a filter and formatted conditions, scanning the results into the provided value.
+func (c *CRUD) QueryWheref(ctx context.Context, queryer any, v any, filter, formats string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
+	err = c.queryWheref(ctx, 1, queryer, v, filter, formats, args, orderby, offset, limit, dest...)
 	return
 }
 
-func (c *CRUD) queryWheref(caller int, queryer any, ctx context.Context, v any, filter, formats string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
+func (c *CRUD) queryWheref(ctx context.Context, caller int, queryer any, v any, filter, formats string, args []any, orderby string, offset, limit int, dest ...any) (err error) {
 	sql := c.querySQL(caller+1, v, "", filter)
 	sql, sqlArgs := c.joinWheref(caller+1, sql, nil, formats, args...)
 	sql = c.joinPage(caller+1, sql, orderby, offset, limit)
-	err = c.query(caller+1, queryer, ctx, v, filter, sql, sqlArgs, dest...)
+	err = c.query(ctx, caller+1, queryer, v, filter, sql, sqlArgs, dest...)
 	return
 }
 
-func QueryUnify(queryer any, ctx context.Context, v any) (err error) {
-	err = Default.queryUnify(1, queryer, ctx, v, "Query")
+// QueryUnify executes a unified query on the database and scans the results into the provided value.
+func QueryUnify(ctx context.Context, queryer any, v any) (err error) {
+	err = Default.queryUnify(ctx, 1, queryer, v, "Query")
 	return
 }
 
-func QueryUnifyTarget(queryer any, ctx context.Context, v any, target string) (err error) {
-	err = Default.queryUnify(1, queryer, ctx, v, target)
+func QueryUnifyTarget(ctx context.Context, queryer any, v any, target string) (err error) {
+	err = Default.queryUnify(ctx, 1, queryer, v, target)
 	return
 }
 
-func (c *CRUD) QueryUnify(queryer any, ctx context.Context, v any) (err error) {
-	err = c.queryUnify(1, queryer, ctx, v, "Query")
+func (c *CRUD) QueryUnify(ctx context.Context, queryer any, v any) (err error) {
+	err = c.queryUnify(ctx, 1, queryer, v, "Query")
 	return
 }
 
-func (c *CRUD) QueryUnifyTarget(queryer any, ctx context.Context, v any, target string) (err error) {
-	err = c.queryUnify(1, queryer, ctx, v, target)
+func (c *CRUD) QueryUnifyTarget(ctx context.Context, queryer any, v any, target string) (err error) {
+	err = c.queryUnify(ctx, 1, queryer, v, target)
 	return
 }
 
-func (c *CRUD) queryUnify(caller int, queryer any, ctx context.Context, v any, target string) (err error) {
+func (c *CRUD) queryUnify(ctx context.Context, caller int, queryer any, v any, target string) (err error) {
 	sql, args := c.queryUnifySQL(caller+1, v, target)
-	rows, err := c.queryerQuery(queryer, ctx, sql, args)
+	rows, err := c.queryerQuery(ctx, queryer, sql, args)
 	if err != nil {
 		if c.Verbose {
 			c.Log(caller, "CRUD query unify by struct:%v,sql:%v,args:%v result is fail:%v", reflect.TypeOf(v), sql, jsonString(args), err)
@@ -1463,11 +1563,13 @@ func (c *CRUD) queryUnify(caller int, queryer any, ctx context.Context, v any, t
 	return
 }
 
+// ScanRow scans a single row from the database into the provided value based on the filter and destination arguments.
 func ScanRow(row Row, v any, filter string, dest ...any) (err error) {
 	err = Default.ScanRow(row, v, filter, dest...)
 	return
 }
 
+// ScanRow scans a single row from the database into the provided value based on the filter and destination arguments.
 func (c *CRUD) ScanRow(row Row, v any, filter string, dest ...any) (err error) {
 	isPtr := reflect.ValueOf(v).Kind() == reflect.Ptr
 	isStruct := reflect.Indirect(reflect.ValueOf(v)).Kind() == reflect.Struct
@@ -1486,21 +1588,25 @@ func (c *CRUD) ScanRow(row Row, v any, filter string, dest ...any) (err error) {
 	return
 }
 
+// ScanRowUnify scans a single row from the database into a unified structure based on the provided value.
 func ScanRowUnify(row Row, v any) (err error) {
 	err = Default.ScanRowUnify(row, v)
 	return
 }
 
+// ScanRowUnifyTarget scans a single row from the database into a unified structure based on the provided value and target.
 func ScanRowUnifyTarget(row Row, v any, target string) (err error) {
 	err = Default.ScanRowUnifyTarget(row, v, target)
 	return
 }
 
+// ScanRowUnify scans a single row from the database into a unified structure based on the provided value and target.
 func (c *CRUD) ScanRowUnify(row Row, v any) (err error) {
 	err = c.scanRowUnify(row, v, "QueryRow")
 	return
 }
 
+// ScanRowUnifyTarget scans a single row from the database into a unified structure based on the provided value and target.
 func (c *CRUD) ScanRowUnifyTarget(row Row, v any, target string) (err error) {
 	err = c.scanRowUnify(row, v, target)
 	return
@@ -1512,18 +1618,20 @@ func (c *CRUD) scanRowUnify(row Row, v any, target string) (err error) {
 	return
 }
 
-func QueryRow(queryer any, ctx context.Context, v any, filter, sql string, args []any, dest ...any) (err error) {
-	err = Default.queryRow(1, queryer, ctx, v, filter, sql, args, dest...)
+// QueryRow executes a query that is expected to return a single row and scans the result into the provided value.
+func QueryRow(ctx context.Context, queryer any, v any, filter, sql string, args []any, dest ...any) (err error) {
+	err = Default.queryRow(ctx, 1, queryer, v, filter, sql, args, dest...)
 	return
 }
 
-func (c *CRUD) QueryRow(queryer any, ctx context.Context, v any, filter, sql string, args []any, dest ...any) (err error) {
-	err = c.queryRow(1, queryer, ctx, v, filter, sql, args, dest...)
+// QueryRow executes a query that is expected to return a single row and scans the result into the provided value.
+func (c *CRUD) QueryRow(ctx context.Context, queryer any, v any, filter, sql string, args []any, dest ...any) (err error) {
+	err = c.queryRow(ctx, 1, queryer, v, filter, sql, args, dest...)
 	return
 }
 
-func (c *CRUD) queryRow(caller int, queryer any, ctx context.Context, v any, filter, sql string, args []any, dest ...any) (err error) {
-	err = c.ScanRow(c.queryerQueryRow(queryer, ctx, sql, args), v, filter, dest...)
+func (c *CRUD) queryRow(ctx context.Context, caller int, queryer any, v any, filter, sql string, args []any, dest ...any) (err error) {
+	err = c.ScanRow(c.queryerQueryRow(ctx, queryer, sql, args), v, filter, dest...)
 	if err != nil {
 		if c.Verbose {
 			c.Log(caller, "CRUD query by struct:%v,filter:%v,sql:%v,args:%v, result is fail:%v", reflect.TypeOf(v), filter, sql, jsonString(args), err)
@@ -1536,63 +1644,71 @@ func (c *CRUD) queryRow(caller int, queryer any, ctx context.Context, v any, fil
 	return
 }
 
-func QueryRowFilter(queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any, dest ...any) (err error) {
-	err = Default.queryRowFilter(1, queryer, ctx, v, filter, where, sep, args, dest...)
+// QueryRowFilter executes a query with a filter and scans the result into the provided value.
+func QueryRowFilter(ctx context.Context, queryer any, v any, filter string, where []string, sep string, args []any, dest ...any) (err error) {
+	err = Default.queryRowFilter(ctx, 1, queryer, v, filter, where, sep, args, dest...)
 	return
 }
 
-func (c *CRUD) QueryRowFilter(queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any, dest ...any) (err error) {
-	err = c.queryRowFilter(1, queryer, ctx, v, filter, where, sep, args, dest...)
+// QueryRowFilter executes a query with a filter and scans the result into the provided value.
+func (c *CRUD) QueryRowFilter(ctx context.Context, queryer any, v any, filter string, where []string, sep string, args []any, dest ...any) (err error) {
+	err = c.queryRowFilter(ctx, 1, queryer, v, filter, where, sep, args, dest...)
 	return
 }
 
-func (c *CRUD) queryRowFilter(caller int, queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any, dest ...any) (err error) {
+func (c *CRUD) queryRowFilter(ctx context.Context, caller int, queryer any, v any, filter string, where []string, sep string, args []any, dest ...any) (err error) {
 	sql := c.querySQL(caller+1, v, "", filter)
 	sql = c.joinWhere(caller+1, sql, where, sep)
-	err = c.queryRow(caller+1, queryer, ctx, v, filter, sql, args, dest...)
+	err = c.queryRow(ctx, caller+1, queryer, v, filter, sql, args, dest...)
 	return
 }
 
-func QueryRowWheref(queryer any, ctx context.Context, v any, filter, formats string, args []any, dest ...any) (err error) {
-	err = Default.queryRowWheref(1, queryer, ctx, v, filter, formats, args, dest...)
+// QueryRowWheref executes a query with a filter and formatted conditions, scanning the result into the provided value.
+func QueryRowWheref(ctx context.Context, queryer any, v any, filter, formats string, args []any, dest ...any) (err error) {
+	err = Default.queryRowWheref(ctx, 1, queryer, v, filter, formats, args, dest...)
 	return
 }
 
-func (c *CRUD) QueryRowWheref(queryer any, ctx context.Context, v any, filter, formats string, args []any, dest ...any) (err error) {
-	err = c.queryRowWheref(1, queryer, ctx, v, filter, formats, args, dest...)
+// QueryRowWheref executes a query with a filter and formatted conditions, scanning the result into the provided value.
+func (c *CRUD) QueryRowWheref(ctx context.Context, queryer any, v any, filter, formats string, args []any, dest ...any) (err error) {
+	err = c.queryRowWheref(ctx, 1, queryer, v, filter, formats, args, dest...)
 	return
 }
 
-func (c *CRUD) queryRowWheref(caller int, queryer any, ctx context.Context, v any, filter, formats string, args []any, dest ...any) (err error) {
+func (c *CRUD) queryRowWheref(ctx context.Context, caller int, queryer any, v any, filter, formats string, args []any, dest ...any) (err error) {
 	sql := c.querySQL(caller+1, v, "", filter)
 	sql, sqlArgs := c.joinWheref(caller+1, sql, nil, formats, args...)
-	err = c.queryRow(caller+1, queryer, ctx, v, filter, sql, sqlArgs, dest...)
+	err = c.queryRow(ctx, caller+1, queryer, v, filter, sql, sqlArgs, dest...)
 	return
 }
 
-func QueryRowUnify(queryer any, ctx context.Context, v any) (err error) {
-	err = Default.queryRowUnify(1, queryer, ctx, v, "QueryRow")
+// QueryRowUnify executes a unified query that is expected to return a single row and scans the result into the provided value.
+func QueryRowUnify(ctx context.Context, queryer any, v any) (err error) {
+	err = Default.queryRowUnify(ctx, 1, queryer, v, "QueryRow")
 	return
 }
 
-func QueryRowUnifyTarget(queryer any, ctx context.Context, v any, target string) (err error) {
-	err = Default.queryRowUnify(1, queryer, ctx, v, target)
+// QueryRowUnifyTarget executes a unified query that is expected to return a single row and scans the result into the provided value.
+func QueryRowUnifyTarget(ctx context.Context, queryer any, v any, target string) (err error) {
+	err = Default.queryRowUnify(ctx, 1, queryer, v, target)
 	return
 }
 
-func (c *CRUD) QueryRowUnify(queryer any, ctx context.Context, v any) (err error) {
-	err = c.queryRowUnify(1, queryer, ctx, v, "QueryRow")
+// QueryRowUnify executes a unified query that is expected to return a single row and scans the result into the provided value.
+func (c *CRUD) QueryRowUnify(ctx context.Context, queryer any, v any) (err error) {
+	err = c.queryRowUnify(ctx, 1, queryer, v, "QueryRow")
 	return
 }
 
-func (c *CRUD) QueryRowUnifyTarget(queryer any, ctx context.Context, v any, target string) (err error) {
-	err = c.queryRowUnify(1, queryer, ctx, v, target)
+// QueryRowUnifyTarget executes a unified query that is expected to return a single row and scans the result into the provided value.
+func (c *CRUD) QueryRowUnifyTarget(ctx context.Context, queryer any, v any, target string) (err error) {
+	err = c.queryRowUnify(ctx, 1, queryer, v, target)
 	return
 }
 
-func (c *CRUD) queryRowUnify(caller int, queryer any, ctx context.Context, v any, target string) (err error) {
+func (c *CRUD) queryRowUnify(ctx context.Context, caller int, queryer any, v any, target string) (err error) {
 	sql, args := c.queryUnifySQL(caller+1, v, target)
-	err = c.scanRowUnify(c.queryerQueryRow(queryer, ctx, sql, args), v, target)
+	err = c.scanRowUnify(c.queryerQueryRow(ctx, queryer, sql, args), v, target)
 	if err != nil {
 		if c.Verbose {
 			c.Log(caller, "CRUD query unify row by struct:%v,sql:%v,args:%v, result is fail:%v", reflect.TypeOf(v), sql, jsonString(args), err)
@@ -1610,6 +1726,7 @@ func CountSQL(v any, filter string, suffix ...string) (sql string) {
 	return
 }
 
+// CountSQL generates a SQL count query based on the provided value and filter.
 func (c *CRUD) CountSQL(v any, filter string, suffix ...string) (sql string) {
 	sql = c.countSQL(1, v, "", filter, suffix...)
 	return
@@ -1637,11 +1754,13 @@ func (c *CRUD) countSQL(caller int, v any, from string, filter string, suffix ..
 	return
 }
 
+// CountUnifySQL generates a unified SQL count query based on the provided value.
 func CountUnifySQL(v any) (sql string, args []any) {
 	sql, args = Default.countUnifySQL(1, v, "Count")
 	return
 }
 
+// CountUnifySQL generates a unified SQL count query based on the provided value.
 func (c *CRUD) CountUnifySQL(v any) (sql string, args []any) {
 	sql, args = c.countUnifySQL(1, v, "Count")
 	return
@@ -1674,21 +1793,25 @@ func (c *CRUD) countUnifySQL(caller int, v any, key string) (sql string, args []
 	return
 }
 
+// CountUnifyDest extracts the model value, query filter, and destination addresses from the provided value.
 func CountUnifyDest(v any) (modelValue any, queryFilter string, dests []any) {
 	modelValue, queryFilter, dests = Default.countUnifyDest(v, "Count")
 	return
 }
 
+// CountUnifyDestTarget extracts the model value, query filter, and destination addresses from the provided value and target.
 func CountUnifyDestTarget(v any, target string) (modelValue any, queryFilter string, dests []any) {
 	modelValue, queryFilter, dests = Default.countUnifyDest(v, target)
 	return
 }
 
+// CountUnifyDest extracts the model value, query filter, and destination addresses from the provided value.
 func (c *CRUD) CountUnifyDest(v any) (modelValue any, queryFilter string, dests []any) {
 	modelValue, queryFilter, dests = c.countUnifyDest(v, "Count")
 	return
 }
 
+// CountUnifyDestTarget extracts the model value, query filter, and destination addresses from the provided value and target.
 func (c *CRUD) CountUnifyDestTarget(v any, target string) (modelValue any, queryFilter string, dests []any) {
 	modelValue, queryFilter, dests = c.countUnifyDest(v, target)
 	return
@@ -1719,18 +1842,20 @@ func (c *CRUD) countUnifyDest(v any, target string) (modelValue any, queryFilter
 	return
 }
 
-func Count(queryer any, ctx context.Context, v any, filter, sql string, args []any, dest ...any) (err error) {
-	err = Default.count(1, queryer, ctx, v, filter, sql, args, dest...)
+// Count executes a count query on the database and scans the result into the provided value.
+func Count(ctx context.Context, queryer any, v any, filter, sql string, args []any, dest ...any) (err error) {
+	err = Default.count(ctx, 1, queryer, v, filter, sql, args, dest...)
 	return
 }
 
-func (c *CRUD) Count(queryer any, ctx context.Context, v any, filter, sql string, args []any, dest ...any) (err error) {
-	err = c.count(1, queryer, ctx, v, filter, sql, args, dest...)
+// Count executes a count query on the database and scans the result into the provided value.
+func (c *CRUD) Count(ctx context.Context, queryer any, v any, filter, sql string, args []any, dest ...any) (err error) {
+	err = c.count(ctx, 1, queryer, v, filter, sql, args, dest...)
 	return
 }
 
-func (c *CRUD) count(caller int, queryer any, ctx context.Context, v any, filter, sql string, args []any, dest ...any) (err error) {
-	err = c.ScanRow(c.queryerQueryRow(queryer, ctx, sql, args), v, filter, dest...)
+func (c *CRUD) count(ctx context.Context, caller int, queryer any, v any, filter, sql string, args []any, dest ...any) (err error) {
+	err = c.ScanRow(c.queryerQueryRow(ctx, queryer, sql, args), v, filter, dest...)
 	if err != nil {
 		if c.Verbose {
 			c.Log(caller, "CRUD count by struct:%v,filter:%v,sql:%v,args:%v, result is fail:%v", reflect.TypeOf(v), filter, sql, jsonString(args), err)
@@ -1743,67 +1868,75 @@ func (c *CRUD) count(caller int, queryer any, ctx context.Context, v any, filter
 	return
 }
 
-func CountFilter(queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any, suffix string, dest ...any) (err error) {
-	err = Default.countFilter(1, queryer, ctx, v, filter, where, sep, args, suffix, dest...)
+// CountFilter executes a count query with a filter and scans the result into the provided value.
+func CountFilter(ctx context.Context, queryer any, v any, filter string, where []string, sep string, args []any, suffix string, dest ...any) (err error) {
+	err = Default.countFilter(ctx, 1, queryer, v, filter, where, sep, args, suffix, dest...)
 	return
 }
 
-func (c *CRUD) CountFilter(queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any, suffix string, dest ...any) (err error) {
-	err = c.countFilter(1, queryer, ctx, v, filter, where, sep, args, suffix, dest...)
+// CountFilter executes a count query with a filter and scans the result into the provided value.
+func (c *CRUD) CountFilter(ctx context.Context, queryer any, v any, filter string, where []string, sep string, args []any, suffix string, dest ...any) (err error) {
+	err = c.countFilter(ctx, 1, queryer, v, filter, where, sep, args, suffix, dest...)
 	return
 }
 
-func (c *CRUD) countFilter(caller int, queryer any, ctx context.Context, v any, filter string, where []string, sep string, args []any, suffix string, dest ...any) (err error) {
+func (c *CRUD) countFilter(ctx context.Context, caller int, queryer any, v any, filter string, where []string, sep string, args []any, suffix string, dest ...any) (err error) {
 	sql := c.countSQL(caller+1, v, "", filter)
 	sql = c.joinWhere(caller+1, sql, where, sep, suffix)
-	err = c.count(caller+1, queryer, ctx, v, filter, sql, args, dest...)
+	err = c.count(ctx, caller+1, queryer, v, filter, sql, args, dest...)
 	return
 }
 
-func CountWheref(queryer any, ctx context.Context, v any, filter, formats string, args []any, suffix string, dest ...any) (err error) {
-	err = Default.countWheref(1, queryer, ctx, v, filter, formats, args, suffix, dest...)
+// CountWheref executes a count query with a filter and formatted conditions, scanning the result into the provided value.
+func CountWheref(ctx context.Context, queryer any, v any, filter, formats string, args []any, suffix string, dest ...any) (err error) {
+	err = Default.countWheref(ctx, 1, queryer, v, filter, formats, args, suffix, dest...)
 	return
 }
 
-func (c *CRUD) CountWheref(queryer any, ctx context.Context, v any, filter, formats string, args []any, suffix string, dest ...any) (err error) {
-	err = c.countWheref(1, queryer, ctx, v, filter, formats, args, suffix, dest...)
+// CountWheref executes a count query with a filter and formatted conditions, scanning the result into the provided value.
+func (c *CRUD) CountWheref(ctx context.Context, queryer any, v any, filter, formats string, args []any, suffix string, dest ...any) (err error) {
+	err = c.countWheref(ctx, 1, queryer, v, filter, formats, args, suffix, dest...)
 	return
 }
 
-func (c *CRUD) countWheref(caller int, queryer any, ctx context.Context, v any, filter, formats string, args []any, suffix string, dest ...any) (err error) {
+func (c *CRUD) countWheref(ctx context.Context, caller int, queryer any, v any, filter, formats string, args []any, suffix string, dest ...any) (err error) {
 	sql := c.countSQL(caller+1, v, "", filter)
 	sql, sqlArgs := c.joinWheref(caller+1, sql, nil, formats, args...)
 	if len(suffix) > 0 {
 		sql += " " + suffix
 	}
-	err = c.count(caller+1, queryer, ctx, v, filter, sql, sqlArgs, dest...)
+	err = c.count(ctx, caller+1, queryer, v, filter, sql, sqlArgs, dest...)
 	return
 }
 
-func CountUnify(queryer any, ctx context.Context, v any) (err error) {
-	err = Default.countUnify(1, queryer, ctx, v, "Count")
+// CountUnify executes a unified count query on the database and scans the result into the provided value.
+func CountUnify(ctx context.Context, queryer any, v any) (err error) {
+	err = Default.countUnify(ctx, 1, queryer, v, "Count")
 	return
 }
 
-func CountUnifyTarget(queryer any, ctx context.Context, v any, target string) (err error) {
-	err = Default.countUnify(1, queryer, ctx, v, target)
+// CountUnifyTarget executes a unified count query on the database and scans the result into the provided value.
+func CountUnifyTarget(ctx context.Context, queryer any, v any, target string) (err error) {
+	err = Default.countUnify(ctx, 1, queryer, v, target)
 	return
 }
 
-func (c *CRUD) CountUnify(queryer any, ctx context.Context, v any) (err error) {
-	err = c.countUnify(1, queryer, ctx, v, "Count")
+// CountUnify executes a unified count query on the database and scans the result into the provided value.
+func (c *CRUD) CountUnify(ctx context.Context, queryer any, v any) (err error) {
+	err = c.countUnify(ctx, 1, queryer, v, "Count")
 	return
 }
 
-func (c *CRUD) CountUnifyTarget(queryer any, ctx context.Context, v any, target string) (err error) {
-	err = c.countUnify(1, queryer, ctx, v, target)
+// CountUnifyTarget executes a unified count query on the database and scans the result into the provided value.
+func (c *CRUD) CountUnifyTarget(ctx context.Context, queryer any, v any, target string) (err error) {
+	err = c.countUnify(ctx, 1, queryer, v, target)
 	return
 }
 
-func (c *CRUD) countUnify(caller int, queryer any, ctx context.Context, v any, target string) (err error) {
+func (c *CRUD) countUnify(ctx context.Context, caller int, queryer any, v any, target string) (err error) {
 	sql, args := c.countUnifySQL(caller+1, v, target)
 	modelValue, queryFilter, dests := c.countUnifyDest(v, target)
-	err = c.ScanRow(c.queryerQueryRow(queryer, ctx, sql, args), modelValue, queryFilter, dests...)
+	err = c.ScanRow(c.queryerQueryRow(ctx, queryer, sql, args), modelValue, queryFilter, dests...)
 	if err != nil {
 		if c.Verbose {
 			c.Log(caller, "CRUD count unify by struct:%v,sql:%v,args:%v, result is fail:%v", reflect.TypeOf(v), sql, jsonString(args), err)
@@ -1816,17 +1949,19 @@ func (c *CRUD) countUnify(caller int, queryer any, ctx context.Context, v any, t
 	return
 }
 
-func ApplyUnify(queryer any, ctx context.Context, v any, enabled ...string) (err error) {
-	err = Default.applyUnify(1, queryer, ctx, v, enabled...)
+// ApplyUnify applies the unify operation to the provided value using the default CRUD instance.
+func ApplyUnify(ctx context.Context, queryer any, v any, enabled ...string) (err error) {
+	err = Default.applyUnify(ctx, 1, queryer, v, enabled...)
 	return
 }
 
-func (c *CRUD) ApplyUnify(queryer any, ctx context.Context, v any, enabled ...string) (err error) {
-	err = c.applyUnify(1, queryer, ctx, v, enabled...)
+// ApplyUnify applies the unify operation to the provided value using the CRUD instance.
+func (c *CRUD) ApplyUnify(ctx context.Context, queryer any, v any, enabled ...string) (err error) {
+	err = c.applyUnify(ctx, 1, queryer, v, enabled...)
 	return
 }
 
-func (c *CRUD) applyUnify(caller int, queryer any, ctx context.Context, v any, enabled ...string) (err error) {
+func (c *CRUD) applyUnify(ctx context.Context, caller int, queryer any, v any, enabled ...string) (err error) {
 	reflectValue := reflect.Indirect(reflect.ValueOf(v))
 	reflectType := reflectValue.Type()
 	enabledAll := xsql.StringArray(enabled)
@@ -1836,19 +1971,19 @@ func (c *CRUD) applyUnify(caller int, queryer any, ctx context.Context, v any, e
 	if value := reflectValue.FieldByName("Query"); value.IsValid() && err == nil && isEnabled("Query") {
 		enabled := value.FieldByName("Enabled")
 		if !enabled.IsValid() || (enabled.IsValid() && enabled.Bool()) {
-			err = c.queryUnify(caller+1, queryer, ctx, v, "Query")
+			err = c.queryUnify(ctx, caller+1, queryer, v, "Query")
 		}
 	}
 	if value := reflectValue.FieldByName("QueryRow"); value.IsValid() && err == nil && isEnabled("QueryRow") {
 		enabled := value.FieldByName("Enabled")
 		if !enabled.IsValid() || (enabled.IsValid() && enabled.Bool()) {
-			err = c.queryRowUnify(caller+1, queryer, ctx, v, "QueryRow")
+			err = c.queryRowUnify(ctx, caller+1, queryer, v, "QueryRow")
 		}
 	}
 	if value := reflectValue.FieldByName("Count"); value.IsValid() && err == nil && isEnabled("Count") {
 		enabled := value.FieldByName("Enabled")
 		if !enabled.IsValid() || (enabled.IsValid() && enabled.Bool()) {
-			err = c.countUnify(caller+1, queryer, ctx, v, "Count")
+			err = c.countUnify(ctx, caller+1, queryer, v, "Count")
 		}
 	}
 	for i := 0; i < reflectType.NumField(); i++ {
@@ -1862,17 +1997,17 @@ func (c *CRUD) applyUnify(caller int, queryer any, ctx context.Context, v any, e
 		case "Query":
 			enabled := fieldValue.FieldByName("Enabled")
 			if !enabled.IsValid() || (enabled.IsValid() && enabled.Bool()) {
-				err = c.queryUnify(caller+1, queryer, ctx, v, fieldType.Name)
+				err = c.queryUnify(ctx, caller+1, queryer, v, fieldType.Name)
 			}
 		case "QueryRow":
 			enabled := fieldValue.FieldByName("Enabled")
 			if !enabled.IsValid() || (enabled.IsValid() && enabled.Bool()) {
-				err = c.queryRowUnify(caller+1, queryer, ctx, v, fieldType.Name)
+				err = c.queryRowUnify(ctx, caller+1, queryer, v, fieldType.Name)
 			}
 		case "Count":
 			enabled := fieldValue.FieldByName("Enabled")
 			if !enabled.IsValid() || (enabled.IsValid() && enabled.Bool()) {
-				err = c.countUnify(caller+1, queryer, ctx, v, fieldType.Name)
+				err = c.countUnify(ctx, caller+1, queryer, v, fieldType.Name)
 			}
 		}
 	}

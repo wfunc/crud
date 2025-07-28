@@ -19,18 +19,17 @@ import (
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	Default.NameConv("", "", reflect.StructField{})
-	Default.ParmConv("", "", "", reflect.StructField{}, nil)
+	Default.ParamConv("", "", "", reflect.StructField{}, nil)
 	Default.getErrNoRows()
 	Default.ErrNoRows = ErrNoRows
 	Default.Verbose = true
 	Default.NameConv = func(on, name string, field reflect.StructField) string {
 		if on == "query" && strings.HasPrefix(field.Type.String(), "xsql.") && field.Type.String() != "xsql.Time" {
 			return name + "::text"
-		} else {
-			return name
 		}
+		return name
 	}
-	Default.ParmConv = func(on, fieldName, fieldFunc string, field reflect.StructField, value any) any {
+	Default.ParamConv = func(on, fieldName, fieldFunc string, field reflect.StructField, value any) any {
 		if c, ok := value.(xsql.ArrayConverter); on == "where" && ok {
 			return c.DbArray()
 		}
@@ -69,21 +68,21 @@ func testQueryCall(t *testing.T, queryer Queryer) {
 	var err error
 	var rows Rows
 
-	rows, err = Default.queryerQuery(queryer, context.Background(), "select 1", []any{})
+	rows, err = Default.queryerQuery(context.Background(), queryer, "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	rows.Scan(converter.IntPtr(0))
 	rows.Close()
-	rows, err = Default.queryerQuery(&TestCrudQueryer{Queryer: queryer}, context.Background(), "select 1", []any{})
+	rows, err = Default.queryerQuery(context.Background(), &TestCrudQueryer{Queryer: queryer}, "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	rows.Scan(converter.IntPtr(0))
 	rows.Close()
-	rows, err = Default.queryerQuery(func() any { return queryer }, context.Background(), "select 1", []any{})
+	rows, err = Default.queryerQuery(context.Background(), func() any { return queryer }, "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -94,20 +93,20 @@ func testQueryCall(t *testing.T, queryer Queryer) {
 		defer func() {
 			recover()
 		}()
-		Default.queryerQuery("xxx", context.Background(), "select 1", []any{})
+		Default.queryerQuery(context.Background(), "xxx", "select 1", []any{})
 	}()
 
-	err = Default.queryerQueryRow(queryer, context.Background(), "select 1", []any{}).Scan(converter.IntPtr(0))
+	err = Default.queryerQueryRow(context.Background(), queryer, "select 1", []any{}).Scan(converter.IntPtr(0))
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = Default.queryerQueryRow(&TestCrudQueryer{Queryer: queryer}, context.Background(), "select 1", []any{}).Scan(converter.IntPtr(0))
+	err = Default.queryerQueryRow(context.Background(), &TestCrudQueryer{Queryer: queryer}, "select 1", []any{}).Scan(converter.IntPtr(0))
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = Default.queryerQueryRow(func() any { return queryer }, context.Background(), "select 1", []any{}).Scan(converter.IntPtr(0))
+	err = Default.queryerQueryRow(context.Background(), func() any { return queryer }, "select 1", []any{}).Scan(converter.IntPtr(0))
 	if err != nil {
 		t.Error(err)
 		return
@@ -116,20 +115,20 @@ func testQueryCall(t *testing.T, queryer Queryer) {
 		defer func() {
 			recover()
 		}()
-		Default.queryerQueryRow("xxx", context.Background(), "select 1", []any{})
+		Default.queryerQueryRow(context.Background(), "xxx", "select 1", []any{})
 	}()
 
-	_, _, err = Default.queryerExec(queryer, context.Background(), "select 1", []any{})
+	_, _, err = Default.queryerExec(context.Background(), queryer, "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	_, _, err = Default.queryerExec(&TestCrudQueryer{Queryer: queryer}, context.Background(), "select 1", []any{})
+	_, _, err = Default.queryerExec(context.Background(), &TestCrudQueryer{Queryer: queryer}, "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	_, _, err = Default.queryerExec(func() any { return queryer }, context.Background(), "select 1", []any{})
+	_, _, err = Default.queryerExec(context.Background(), func() any { return queryer }, "select 1", []any{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -138,7 +137,7 @@ func testQueryCall(t *testing.T, queryer Queryer) {
 		defer func() {
 			recover()
 		}()
-		Default.queryerExec("xxx", context.Background(), "select 1", []any{})
+		Default.queryerExec(context.Background(), "xxx", "select 1", []any{})
 	}()
 }
 
@@ -539,7 +538,7 @@ func addTestMultiObject(queryer Queryer) (object *CrudObject, objects []*CrudObj
 	object.Float64Ptr = object.Float64Value
 	object.StringPtr = &object.StringValue
 	object.Status = CrudObjectStatusNormal
-	_, err = InsertFilter(queryer, context.Background(), object, "^tid#all", "returning", "tid#all")
+	_, err = InsertFilter(context.Background(), queryer, object, "^tid#all", "returning", "tid#all")
 	if err != nil {
 		return
 	}
@@ -554,7 +553,7 @@ func addTestMultiObject(queryer Queryer) (object *CrudObject, objects []*CrudObj
 		object.Float64Value = decimal.NewFromInt(int64(i % 3))
 		obj.StringValue = fmt.Sprintf("%v", i%3)
 		obj.Status = CrudObjectStatusNormal
-		_, err = InsertFilter(queryer, context.Background(), obj, "^tid#all", "returning", "tid#all")
+		_, err = InsertFilter(context.Background(), queryer, obj, "^tid#all", "returning", "tid#all")
 		if err != nil {
 			return
 		}
@@ -647,13 +646,13 @@ func testInsert(t *testing.T, queryer Queryer) {
 	{
 		object := newTestObject()
 		object.TID = 0
-		_, err = InsertFilter(queryer, context.Background(), object, "^tid#all", "returning", "tid#all")
+		_, err = InsertFilter(context.Background(), queryer, object, "^tid#all", "returning", "tid#all")
 		if err != nil || object.TID < 1 {
 			t.Error(err)
 			return
 		}
 		object.TID = 0
-		_, err = InsertFilter(queryer, context.Background(), object, "^tid", "returning", "tid#all")
+		_, err = InsertFilter(context.Background(), queryer, object, "^tid", "returning", "tid#all")
 		if err != nil || object.TID < 1 {
 			t.Error(err)
 			return
@@ -661,17 +660,17 @@ func testInsert(t *testing.T, queryer Queryer) {
 	}
 	{
 		object := newTestObject()
-		_, err = InsertFilter(queryer, context.Background(), object, "^tid#all", "", "")
+		_, err = InsertFilter(context.Background(), queryer, object, "^tid#all", "", "")
 		if err != nil || object.TID > 0 {
 			t.Error(err)
 			return
 		}
-		_, err = InsertFilter(queryer, context.Background(), object, "^tid", "", "")
+		_, err = InsertFilter(context.Background(), queryer, object, "^tid", "", "")
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		_, err = Default.InsertFilter(queryer, context.Background(), object, "^tid#all", "", "")
+		_, err = Default.InsertFilter(context.Background(), queryer, object, "^tid#all", "", "")
 		if err != nil {
 			t.Error(err)
 			return
@@ -680,12 +679,12 @@ func testInsert(t *testing.T, queryer Queryer) {
 	{ //error
 		object := newTestObject()
 		object.TID = 0
-		_, err = InsertFilter(queryer, context.Background(), object, "^tid#all", "xxxx", "tid#all")
+		_, err = InsertFilter(context.Background(), queryer, object, "^tid#all", "xxxx", "tid#all")
 		if err == nil {
 			t.Error(err)
 			return
 		}
-		_, err = InsertFilter(queryer, context.Background(), object, "", "xx xx", "")
+		_, err = InsertFilter(context.Background(), queryer, object, "", "xx xx", "")
 		if err == nil {
 			t.Error(err)
 			return
@@ -704,7 +703,7 @@ func testUpdate(t *testing.T, queryer Queryer) {
 	{
 		object.TID = 0
 		object.Level = 1
-		_, err = InsertFilter(queryer, context.Background(), object, "^tid#all", "returning", "tid#all")
+		_, err = InsertFilter(context.Background(), queryer, object, "^tid#all", "returning", "tid#all")
 		if err != nil || object.TID < 1 {
 			t.Error(err)
 			return
@@ -762,12 +761,12 @@ func testUpdate(t *testing.T, queryer Queryer) {
 		where, args := AppendWhere(nil, args, object.TID > 0, "tid=$%v", object.TID)
 		where, args = AppendWhere(where, args, object.Level > 0, "level=$%v", object.Level)
 		fmt.Println("AppendWhere-->", where, args)
-		_, err = Update(queryer, context.Background(), object, sql, where, "and", args)
+		_, err = Update(context.Background(), queryer, object, sql, where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = UpdateRow(queryer, context.Background(), object, sql, where, "and", args)
+		err = UpdateRow(context.Background(), queryer, object, sql, where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
@@ -783,12 +782,12 @@ func testUpdate(t *testing.T, queryer Queryer) {
 		where, args := AppendWhere(nil, args, object.TID > 0, "tid=$%v", object.TID)
 		where, args = AppendWhere(where, args, object.Level > 0, "level=$%v", object.Level)
 		fmt.Println("AppendWhere-->", where, args)
-		_, err = Default.Update(queryer, context.Background(), object, sql, where, "and", args)
+		_, err = Default.Update(context.Background(), queryer, object, sql, where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = Default.UpdateRow(queryer, context.Background(), object, sql, where, "and", args)
+		err = Default.UpdateRow(context.Background(), queryer, object, sql, where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
@@ -810,12 +809,12 @@ func testUpdate(t *testing.T, queryer Queryer) {
 		where, args = AppendWhere(where, args, object.TID > 0, "tid=$%v", object.TID)
 		where, args = AppendWhere(where, args, object.Level > 0, "level=$%v", object.Level)
 		fmt.Println("AppendWhere-->", where, args)
-		_, err = UpdateSet(queryer, context.Background(), object, sets, where, "and", args)
+		_, err = UpdateSet(context.Background(), queryer, object, sets, where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = UpdateRowSet(queryer, context.Background(), object, sets, where, "and", args)
+		err = UpdateRowSet(context.Background(), queryer, object, sets, where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
@@ -831,12 +830,12 @@ func testUpdate(t *testing.T, queryer Queryer) {
 		}
 		where, args = AppendWhere(where, args, object.TID > 0, "tid=$%v", object.TID)
 		where, args = AppendWhere(where, args, object.Level > 0, "level=$%v", object.Level)
-		_, err = Default.UpdateSet(queryer, context.Background(), object, sets, where, "and", args)
+		_, err = Default.UpdateSet(context.Background(), queryer, object, sets, where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = Default.UpdateRowSet(queryer, context.Background(), object, sets, where, "and", args)
+		err = Default.UpdateRowSet(context.Background(), queryer, object, sets, where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
@@ -845,47 +844,47 @@ func testUpdate(t *testing.T, queryer Queryer) {
 	{
 		object.UpdateTime = xsql.TimeNow()
 		where, args := AppendWhere(nil, nil, object.TID > 0, "tid=$%v", object.TID)
-		_, err = UpdateFilter(queryer, context.Background(), object, "title,image,update_time,status", where, "and", args)
+		_, err = UpdateFilter(context.Background(), queryer, object, "title,image,update_time,status", where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
 		}
 		object.UpdateTime = xsql.TimeNow()
-		_, err = Default.UpdateFilter(queryer, context.Background(), object, "title,image,update_time,status", where, "and", args)
+		_, err = Default.UpdateFilter(context.Background(), queryer, object, "title,image,update_time,status", where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
 		}
 		object.UpdateTime = xsql.TimeNow()
-		err = UpdateRowFilter(queryer, context.Background(), object, "title,image,update_time,status", where, "and", args)
+		err = UpdateRowFilter(context.Background(), queryer, object, "title,image,update_time,status", where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
 		}
 		object.UpdateTime = xsql.TimeNow()
-		err = Default.UpdateRowFilter(queryer, context.Background(), object, "title,image,update_time,status", where, "and", args)
+		err = Default.UpdateRowFilter(context.Background(), queryer, object, "title,image,update_time,status", where, "and", args)
 		if err != nil {
 			t.Error(err)
 			return
 		}
 	}
 	{
-		_, err = UpdateWheref(queryer, context.Background(), object, "title,image,update_time,status", "tid=$%v", object.TID)
+		_, err = UpdateWheref(context.Background(), queryer, object, "title,image,update_time,status", "tid=$%v", object.TID)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		_, err = Default.UpdateWheref(queryer, context.Background(), object, "title,image,update_time,status", "tid=$%v", object.TID)
+		_, err = Default.UpdateWheref(context.Background(), queryer, object, "title,image,update_time,status", "tid=$%v", object.TID)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = UpdateRowWheref(queryer, context.Background(), object, "title,image,update_time,status", "tid=$%v", object.TID)
+		err = UpdateRowWheref(context.Background(), queryer, object, "title,image,update_time,status", "tid=$%v", object.TID)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = Default.UpdateRowWheref(queryer, context.Background(), object, "title,image,update_time,status", "tid=$%v", object.TID)
+		err = Default.UpdateRowWheref(context.Background(), queryer, object, "title,image,update_time,status", "tid=$%v", object.TID)
 		if err != nil {
 			t.Error(err)
 			return
@@ -894,59 +893,59 @@ func testUpdate(t *testing.T, queryer Queryer) {
 	{ //error
 		object := newTestObject()
 		object.TID = 0
-		_, err = Update(queryer, context.Background(), object, "xx", nil, "", nil)
+		_, err = Update(context.Background(), queryer, object, "xx", nil, "", nil)
 		if err == nil {
 			t.Error(err)
 			return
 		}
-		err = UpdateRow(queryer, context.Background(), object, "xx", nil, "", nil)
+		err = UpdateRow(context.Background(), queryer, object, "xx", nil, "", nil)
 		if err == nil {
 			t.Error(err)
 			return
 		}
-		_, err = UpdateSet(queryer, context.Background(), object, nil, nil, "", nil)
+		_, err = UpdateSet(context.Background(), queryer, object, nil, nil, "", nil)
 		if err == nil {
 			t.Error(err)
 			return
 		}
-		err = UpdateRowSet(queryer, context.Background(), object, nil, nil, "", nil)
+		err = UpdateRowSet(context.Background(), queryer, object, nil, nil, "", nil)
 		if err == nil {
 			t.Error(err)
 			return
 		}
-		_, err = UpdateFilter(queryer, context.Background(), object, "xxstatus", nil, "", nil)
+		_, err = UpdateFilter(context.Background(), queryer, object, "xxstatus", nil, "", nil)
 		if err == nil {
 			t.Error(err)
 			return
 		}
-		_, err = UpdateWheref(queryer, context.Background(), object, "status", "xxx=$1", -1)
+		_, err = UpdateWheref(context.Background(), queryer, object, "status", "xxx=$1", -1)
 		if err == nil {
 			t.Error(err)
 			return
 		}
-		err = UpdateRowFilter(queryer, context.Background(), object, "xxstatus", nil, "", nil)
+		err = UpdateRowFilter(context.Background(), queryer, object, "xxstatus", nil, "", nil)
 		if err == nil {
 			t.Error(err)
 			return
 		}
 		_, sets, args := UpdateArgs(object, "", nil)
 		where, args := AppendWhere(nil, args, true, "tid=$%v", -100)
-		err = UpdateRow(queryer, context.Background(), object, `update crud_object set `+strings.Join(sets, ","), where, "and", args)
+		err = UpdateRow(context.Background(), queryer, object, `update crud_object set `+strings.Join(sets, ","), where, "and", args)
 		if err != ErrNoRows {
 			t.Error(err)
 			return
 		}
-		err = UpdateRowSet(queryer, context.Background(), object, sets, where, "and", args)
+		err = UpdateRowSet(context.Background(), queryer, object, sets, where, "and", args)
 		if err != ErrNoRows {
 			t.Error(err)
 			return
 		}
-		err = UpdateRowWheref(queryer, context.Background(), object, "title,image,update_time,status", "tid=$%v", -100)
+		err = UpdateRowWheref(context.Background(), queryer, object, "title,image,update_time,status", "tid=$%v", -100)
 		if err != ErrNoRows {
 			t.Error(err)
 			return
 		}
-		err = UpdateRowFilter(queryer, context.Background(), object, "title,image,update_time,status", []string{"tid=$1"}, "and", []any{-100})
+		err = UpdateRowFilter(context.Background(), queryer, object, "title,image,update_time,status", []string{"tid=$1"}, "and", []any{-100})
 		if err != ErrNoRows {
 			t.Error(err)
 			return
@@ -968,7 +967,7 @@ func testJoinWhere(t *testing.T, queryer Queryer) {
 		querySQL := JoinWhere(sql, where, "and", "limit 1")
 		fmt.Println("JoinWhere-->", querySQL, args)
 		var result *CrudObject
-		err = QueryRow(queryer, context.Background(), object, "#all", querySQL, args, &result)
+		err = QueryRow(context.Background(), queryer, object, "#all", querySQL, args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -979,7 +978,7 @@ func testJoinWhere(t *testing.T, queryer Queryer) {
 		querySQL := Default.JoinWhere(sql, where, "and", "limit 1")
 		fmt.Println("JoinWhere-->", querySQL, args)
 		var result *CrudObject
-		err = QueryRow(queryer, context.Background(), object, "#all", querySQL, args, &result)
+		err = QueryRow(context.Background(), queryer, object, "#all", querySQL, args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -989,7 +988,7 @@ func testJoinWhere(t *testing.T, queryer Queryer) {
 		querySQL, args := JoinWheref(sql, nil, "tid=$%v", object.TID)
 		fmt.Println("JoinWhere-->", querySQL, args)
 		var result *CrudObject
-		err = QueryRow(queryer, context.Background(), object, "#all", querySQL, args, &result)
+		err = QueryRow(context.Background(), queryer, object, "#all", querySQL, args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -999,7 +998,7 @@ func testJoinWhere(t *testing.T, queryer Queryer) {
 		querySQL, args := JoinWheref(sql, nil, "tid=$%v#+or", object.TID)
 		fmt.Println("JoinWhere-->", querySQL, args)
 		var result *CrudObject
-		err = QueryRow(queryer, context.Background(), object, "#all", querySQL, args, &result)
+		err = QueryRow(context.Background(), queryer, object, "#all", querySQL, args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -1009,7 +1008,7 @@ func testJoinWhere(t *testing.T, queryer Queryer) {
 		querySQL, args := Default.JoinWheref(sql, nil, "tid=$%v#+or", object.TID)
 		fmt.Println("JoinWhere-->", querySQL, args)
 		var result *CrudObject
-		err = QueryRow(queryer, context.Background(), object, "#all", querySQL, args, &result)
+		err = QueryRow(context.Background(), queryer, object, "#all", querySQL, args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -1030,7 +1029,7 @@ func testJoinPage(t *testing.T, queryer Queryer) {
 		querySQL := JoinPage(sql, "order by tid asc", 0, 1)
 		fmt.Println("JoinWhere-->", querySQL)
 		var result *CrudObject
-		err = QueryRow(queryer, context.Background(), object, "#all", querySQL, nil, &result)
+		err = QueryRow(context.Background(), queryer, object, "#all", querySQL, nil, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -1040,7 +1039,7 @@ func testJoinPage(t *testing.T, queryer Queryer) {
 		querySQL := Default.JoinPage(sql, "order by tid asc", 0, 1)
 		fmt.Println("JoinWhere-->", querySQL)
 		var result *CrudObject
-		err = QueryRow(queryer, context.Background(), object, "#all", querySQL, nil, &result)
+		err = QueryRow(context.Background(), queryer, object, "#all", querySQL, nil, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -1078,7 +1077,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 		sql = JoinWhere(sql, where, "and", "limit 1")
 		fmt.Println("JoinWhere-->", sql, args)
 		var result *CrudObject
-		err = QueryRow(queryer, context.Background(), object, "#all", sql, args, &result)
+		err = QueryRow(context.Background(), queryer, object, "#all", sql, args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -1089,7 +1088,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 		args := []any{object.TID}
 		fmt.Println("JoinWhere-->", sql, args)
 		var result *CrudObject
-		err = QueryRow(queryer, context.Background(), object, "#all", sql, args, &result)
+		err = QueryRow(context.Background(), queryer, object, "#all", sql, args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -1100,7 +1099,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 		args := []any{object.TID}
 		fmt.Println("JoinWhere-->", sql, args)
 		var result *CrudObject
-		err = QueryRow(queryer, context.Background(), object, "o.#all", sql, args, &result)
+		err = QueryRow(context.Background(), queryer, object, "o.#all", sql, args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -1114,37 +1113,37 @@ func testQuery(t *testing.T, queryer Queryer) {
 		var result *CrudObject
 		//
 		result = nil
-		err = QueryRow(queryer, context.Background(), object, "#all", sql, args, &result)
+		err = QueryRow(context.Background(), queryer, object, "#all", sql, args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
 		}
 		result = nil
-		err = QueryRowFilter(queryer, context.Background(), object, "#all", where, "and", args, &result)
+		err = QueryRowFilter(context.Background(), queryer, object, "#all", where, "and", args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
 		}
 		result = nil
-		err = QueryRowWheref(queryer, context.Background(), object, "#all", "tid=$%v", []any{object.TID}, &result)
+		err = QueryRowWheref(context.Background(), queryer, object, "#all", "tid=$%v", []any{object.TID}, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
 		}
 		result = nil
-		err = Default.QueryRow(queryer, context.Background(), object, "#all", sql, args, &result)
+		err = Default.QueryRow(context.Background(), queryer, object, "#all", sql, args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
 		}
 		result = nil
-		err = Default.QueryRowFilter(queryer, context.Background(), object, "#all", where, "and", args, &result)
+		err = Default.QueryRowFilter(context.Background(), queryer, object, "#all", where, "and", args, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
 		}
 		result = nil
-		err = Default.QueryRowWheref(queryer, context.Background(), object, "#all", "tid=$%v", []any{object.TID}, &result)
+		err = Default.QueryRowWheref(context.Background(), queryer, object, "#all", "tid=$%v", []any{object.TID}, &result)
 		if err != nil || result.TID < 1 {
 			t.Error(err)
 			return
@@ -1156,7 +1155,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 		sql = JoinWhere(sql, where, "and", "limit 1")
 		fmt.Println("JoinWhere-->", sql, args)
 		var results []*CrudObject
-		err = Query(queryer, context.Background(), object, "#all", sql, args, &results)
+		err = Query(context.Background(), queryer, object, "#all", sql, args, &results)
 		if err != nil || len(results) != 1 || results[0].TID < 1 {
 			t.Error(err)
 			return
@@ -1168,7 +1167,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 		sql = JoinWhere(sql, where, "and", "limit 1")
 		fmt.Println("JoinWhere-->", sql, args)
 		var results []*CrudObject
-		err = Query(queryer, context.Background(), object, "o.#all", sql, args, &results)
+		err = Query(context.Background(), queryer, object, "o.#all", sql, args, &results)
 		if err != nil || len(results) != 1 || results[0].TID < 1 {
 			t.Error(err)
 			return
@@ -1179,7 +1178,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 		sql, args := JoinWheref(sql, nil, "tid=$%v", object.TID)
 		fmt.Println("JoinWheref-->", sql, args)
 		var results []*CrudObject
-		err = Query(queryer, context.Background(), object, "#all", sql, args, &results)
+		err = Query(context.Background(), queryer, object, "#all", sql, args, &results)
 		if err != nil || len(results) != 1 || results[0].TID < 1 {
 			t.Error(err)
 			return
@@ -1193,37 +1192,37 @@ func testQuery(t *testing.T, queryer Queryer) {
 		var results []*CrudObject
 		//
 		results = nil
-		err = Query(queryer, context.Background(), object, "#all", sql, nil, &results)
+		err = Query(context.Background(), queryer, object, "#all", sql, nil, &results)
 		if err != nil || len(results) != 1 || results[0].TID < 1 {
 			t.Error(err)
 			return
 		}
 		results = nil
-		err = QueryFilter(queryer, context.Background(), object, "#all", where, "and", args, "", 0, 0, &results)
+		err = QueryFilter(context.Background(), queryer, object, "#all", where, "and", args, "", 0, 0, &results)
 		if err != nil || len(results) != 11 {
 			t.Error(err)
 			return
 		}
 		results = nil
-		err = QueryWheref(queryer, context.Background(), object, "#all", "level>$%v#all", []any{0}, "", 0, 0, &results)
+		err = QueryWheref(context.Background(), queryer, object, "#all", "level>$%v#all", []any{0}, "", 0, 0, &results)
 		if err != nil || len(results) != 11 {
 			t.Error(err)
 			return
 		}
 		results = nil
-		err = Default.Query(queryer, context.Background(), object, "#all", sql, nil, &results)
+		err = Default.Query(context.Background(), queryer, object, "#all", sql, nil, &results)
 		if err != nil || len(results) != 1 || results[0].TID < 1 {
 			t.Error(err)
 			return
 		}
 		results = nil
-		err = Default.QueryFilter(queryer, context.Background(), object, "#all", where, "and", args, "", 0, 0, &results)
+		err = Default.QueryFilter(context.Background(), queryer, object, "#all", where, "and", args, "", 0, 0, &results)
 		if err != nil || len(results) != 11 {
 			t.Error(err)
 			return
 		}
 		results = nil
-		err = Default.QueryWheref(queryer, context.Background(), object, "#all", "level>$%v#all", []any{0}, "", 0, 0, &results)
+		err = Default.QueryWheref(context.Background(), queryer, object, "#all", "level>$%v#all", []any{0}, "", 0, 0, &results)
 		if err != nil || len(results) != 11 {
 			t.Error(err)
 			return
@@ -1242,7 +1241,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 		var int64Map1 map[int64][]int64
 		var infoMap = ObjectInfoMap{}
 		err = QueryWheref(
-			queryer, context.Background(), object, "#all", "", nil, "", 0, 0,
+			context.Background(), queryer, object, "#all", "", nil, "", 0, 0,
 			&resultList, &result,
 			&resultList2, "user_id,count:tid",
 			&resultList3, "user_id,count:tid",
@@ -1281,79 +1280,79 @@ func testQuery(t *testing.T, queryer Queryer) {
 	}
 	{
 		var idList []int64
-		err = Query(queryer, context.Background(), int64(0), "tid#all", "select tid from crud_object", nil, &idList)
+		err = Query(context.Background(), queryer, int64(0), "tid#all", "select tid from crud_object", nil, &idList)
 		if err != nil || len(idList) != 11 {
 			t.Errorf("%v,%v", err, idList)
 			return
 		}
 		var intList []int
-		err = Query(queryer, context.Background(), int(0), "#all", "select int_value from crud_object", nil, &intList)
+		err = Query(context.Background(), queryer, int(0), "#all", "select int_value from crud_object", nil, &intList)
 		if err != nil || len(intList) != 11 {
 			t.Errorf("%v,%v", err, intList)
 			return
 		}
 		var intPtrList []*int
-		err = Query(queryer, context.Background(), converter.IntPtr(0), "#all", "select int_ptr from crud_object", nil, &intPtrList)
+		err = Query(context.Background(), queryer, converter.IntPtr(0), "#all", "select int_ptr from crud_object", nil, &intPtrList)
 		if err != nil || len(intPtrList) != 11 {
 			t.Errorf("%v,%v", err, intPtrList)
 			return
 		}
 		var int64List []int64
-		err = Query(queryer, context.Background(), int64(0), "#all", "select int64_value from crud_object", nil, &int64List)
+		err = Query(context.Background(), queryer, int64(0), "#all", "select int64_value from crud_object", nil, &int64List)
 		if err != nil || len(int64List) != 11 {
 			t.Errorf("%v,%v", err, int64List)
 			return
 		}
 		int64List = nil
-		err = Query(queryer, context.Background(), object, "int64_value#all", "select int64_value from crud_object", nil, &int64List, "int64_value")
+		err = Query(context.Background(), queryer, object, "int64_value#all", "select int64_value from crud_object", nil, &int64List, "int64_value")
 		if err != nil || len(int64List) != 7 {
 			t.Errorf("%v,%v", err, int64List)
 			return
 		}
 		int64List = nil
-		err = Query(queryer, context.Background(), object, "int64_value#all", "select int64_value from crud_object", nil, &int64List, "int64_value#all")
+		err = Query(context.Background(), queryer, object, "int64_value#all", "select int64_value from crud_object", nil, &int64List, "int64_value#all")
 		if err != nil || len(int64List) != 11 {
 			t.Errorf("%v,%v", err, int64List)
 			return
 		}
 		var int64PtrList []*int64
-		err = Query(queryer, context.Background(), converter.Int64Ptr(0), "#all", "select int64_ptr from crud_object", nil, &int64PtrList)
+		err = Query(context.Background(), queryer, converter.Int64Ptr(0), "#all", "select int64_ptr from crud_object", nil, &int64PtrList)
 		if err != nil || len(int64PtrList) != 11 {
 			t.Errorf("%v,%v", err, int64PtrList)
 			return
 		}
 		int64PtrList = nil
-		err = Query(queryer, context.Background(), object, "int64_ptr#all", "select int64_ptr from crud_object", nil, &int64PtrList, "int64_ptr")
+		err = Query(context.Background(), queryer, object, "int64_ptr#all", "select int64_ptr from crud_object", nil, &int64PtrList, "int64_ptr")
 		if err != nil || len(int64PtrList) != 1 {
 			t.Errorf("%v,%v", err, int64PtrList)
 			return
 		}
 		int64PtrList = nil
-		err = Query(queryer, context.Background(), object, "int64_ptr#all", "select int64_ptr from crud_object", nil, &int64PtrList, "int64_ptr#all")
+		err = Query(context.Background(), queryer, object, "int64_ptr#all", "select int64_ptr from crud_object", nil, &int64PtrList, "int64_ptr#all")
 		if err != nil || len(int64PtrList) != 11 {
 			t.Errorf("%v,%v", err, int64PtrList)
 			return
 		}
 		var float64List []float64
-		err = Query(queryer, context.Background(), float64(0), "#all", "select float64_value from crud_object", nil, &float64List)
+		err = Query(context.Background(), queryer, float64(0), "#all", "select float64_value from crud_object", nil, &float64List)
 		if err != nil || len(float64List) != 11 {
 			t.Errorf("%v,%v", err, float64List)
 			return
 		}
 		var float64PtrList []*float64
-		err = Query(queryer, context.Background(), converter.Float64Ptr(0), "#all", "select float64_ptr from crud_object", nil, &float64PtrList)
+		err = Query(context.Background(), queryer, converter.Float64Ptr(0), "#all", "select float64_ptr from crud_object", nil, &float64PtrList)
 		if err != nil || len(float64List) != 11 {
 			t.Errorf("%v,%v", err, float64List)
 			return
 		}
 		var stringList []string
-		err = Query(queryer, context.Background(), string(""), "#all", "select string_value from crud_object", nil, &stringList)
+		err = Query(context.Background(), queryer, string(""), "#all", "select string_value from crud_object", nil, &stringList)
 		if err != nil || len(stringList) != 11 {
 			t.Errorf("%v,%v", err, stringList)
 			return
 		}
 		var stringPtrList []*string
-		err = Query(queryer, context.Background(), converter.StringPtr(""), "#all", "select string_ptr from crud_object", nil, &stringPtrList)
+		err = Query(context.Background(), queryer, converter.StringPtr(""), "#all", "select string_ptr from crud_object", nil, &stringPtrList)
 		if err != nil || len(stringPtrList) != 11 {
 			t.Errorf("%v,%v", err, stringPtrList)
 			return
@@ -1361,55 +1360,55 @@ func testQuery(t *testing.T, queryer Queryer) {
 	}
 	{
 		var idResult int64
-		err = QueryRow(queryer, context.Background(), int64(0), "#all", "select tid from crud_object where tid=$1", []any{object.TID}, &idResult)
+		err = QueryRow(context.Background(), queryer, int64(0), "#all", "select tid from crud_object where tid=$1", []any{object.TID}, &idResult)
 		if err != nil || idResult < 1 {
 			t.Errorf("%v,%v", err, idResult)
 			return
 		}
 		var intResult int
-		err = QueryRow(queryer, context.Background(), int(0), "#all", "select int_value from crud_object where tid=$1", []any{object.TID}, &intResult)
+		err = QueryRow(context.Background(), queryer, int(0), "#all", "select int_value from crud_object where tid=$1", []any{object.TID}, &intResult)
 		if err != nil || intResult < 1 {
 			t.Errorf("%v,%v", err, intResult)
 			return
 		}
 		var intPtrResult *int
-		err = QueryRow(queryer, context.Background(), converter.IntPtr(0), "#all", "select int_ptr from crud_object where tid=$1", []any{object.TID}, &intPtrResult)
+		err = QueryRow(context.Background(), queryer, converter.IntPtr(0), "#all", "select int_ptr from crud_object where tid=$1", []any{object.TID}, &intPtrResult)
 		if err != nil || intPtrResult == nil {
 			t.Errorf("%v,%v", err, intPtrResult)
 			return
 		}
 		var int64Result int64
-		err = QueryRow(queryer, context.Background(), int64(0), "#all", "select int64_value from crud_object where tid=$1", []any{object.TID}, &int64Result)
+		err = QueryRow(context.Background(), queryer, int64(0), "#all", "select int64_value from crud_object where tid=$1", []any{object.TID}, &int64Result)
 		if err != nil || int64Result < 1 {
 			t.Errorf("%v,%v", err, int64Result)
 			return
 		}
 		var int64PtrResult *int64
-		err = QueryRow(queryer, context.Background(), converter.Int64Ptr(0), "#all", "select int64_ptr from crud_object where tid=$1", []any{object.TID}, &int64PtrResult)
+		err = QueryRow(context.Background(), queryer, converter.Int64Ptr(0), "#all", "select int64_ptr from crud_object where tid=$1", []any{object.TID}, &int64PtrResult)
 		if err != nil || int64PtrResult == nil {
 			t.Errorf("%v,%v", err, int64PtrResult)
 			return
 		}
 		var float64Result float64
-		err = QueryRow(queryer, context.Background(), float64(0), "#all", "select float64_value from crud_object where tid=$1", []any{object.TID}, &float64Result)
+		err = QueryRow(context.Background(), queryer, float64(0), "#all", "select float64_value from crud_object where tid=$1", []any{object.TID}, &float64Result)
 		if err != nil || float64Result < 1 {
 			t.Errorf("%v,%v", err, float64Result)
 			return
 		}
 		var float64PtrResult *float64
-		err = QueryRow(queryer, context.Background(), converter.Float64Ptr(0), "#all", "select float64_ptr from crud_object where tid=$1", []any{object.TID}, &float64PtrResult)
+		err = QueryRow(context.Background(), queryer, converter.Float64Ptr(0), "#all", "select float64_ptr from crud_object where tid=$1", []any{object.TID}, &float64PtrResult)
 		if err != nil || float64Result < 1 {
 			t.Errorf("%v,%v", err, float64Result)
 			return
 		}
 		var stringResult string
-		err = QueryRow(queryer, context.Background(), string(""), "#all", "select string_value from crud_object where tid=$1", []any{object.TID}, &stringResult)
+		err = QueryRow(context.Background(), queryer, string(""), "#all", "select string_value from crud_object where tid=$1", []any{object.TID}, &stringResult)
 		if err != nil || len(stringResult) < 1 {
 			t.Errorf("%v,%v", err, stringResult)
 			return
 		}
 		var stringPtrResult *string
-		err = QueryRow(queryer, context.Background(), converter.StringPtr(""), "#all", "select string_ptr from crud_object where tid=$1", []any{object.TID}, &stringPtrResult)
+		err = QueryRow(context.Background(), queryer, converter.StringPtr(""), "#all", "select string_ptr from crud_object where tid=$1", []any{object.TID}, &stringPtrResult)
 		if err != nil || stringPtrResult == nil {
 			t.Errorf("%v,%v", err, stringPtrResult)
 			return
@@ -1417,19 +1416,19 @@ func testQuery(t *testing.T, queryer Queryer) {
 	}
 	{
 		var idResult int64
-		err = QueryRowWheref(queryer, context.Background(), MetaWith(object, int64(0)), "tid#all", "tid=$%v", []any{object.TID}, &idResult, "tid")
+		err = QueryRowWheref(context.Background(), queryer, MetaWith(object, int64(0)), "tid#all", "tid=$%v", []any{object.TID}, &idResult, "tid")
 		if err != nil || idResult < 1 {
 			t.Errorf("%v,%v", err, idResult)
 			return
 		}
 		var stringResult string
-		err = QueryRowWheref(queryer, context.Background(), MetaWith(object, string("")), "string_value#all", "tid=$%v", []any{object.TID}, &stringResult, "string_value")
+		err = QueryRowWheref(context.Background(), queryer, MetaWith(object, string("")), "string_value#all", "tid=$%v", []any{object.TID}, &stringResult, "string_value")
 		if err != nil || len(stringResult) < 1 {
 			t.Errorf("%v,%v", err, stringResult)
 			return
 		}
 		var stringPtrResult *string
-		err = QueryRowWheref(queryer, context.Background(), MetaWith(object, converter.StringPtr("")), "string_ptr#all", "tid=$%v", []any{object.TID}, &stringPtrResult, "string_ptr")
+		err = QueryRowWheref(context.Background(), queryer, MetaWith(object, converter.StringPtr("")), "string_ptr#all", "tid=$%v", []any{object.TID}, &stringPtrResult, "string_ptr")
 		if err != nil || stringPtrResult == nil {
 			t.Errorf("%v,%v", err, stringPtrResult)
 			return
@@ -1437,7 +1436,7 @@ func testQuery(t *testing.T, queryer Queryer) {
 	}
 	{ //alias
 		var idList []int64
-		err = Query(queryer, context.Background(), MetaWith(object, int64(0)), "o.tid#all", "select o.tid from crud_object o", nil, &idList, "tid")
+		err = Query(context.Background(), queryer, MetaWith(object, int64(0)), "o.tid#all", "select o.tid from crud_object o", nil, &idList, "tid")
 		if err != nil || len(idList) != 11 {
 			t.Errorf("%v,%v", err, idList)
 			return
@@ -1489,26 +1488,26 @@ func testQuery(t *testing.T, queryer Queryer) {
 		var results []*CrudObject
 
 		sql := QuerySQL(object, "#all", "xxx xxx")
-		err = Query(queryer, context.Background(), object, "#all", sql, nil, &results)
+		err = Query(context.Background(), queryer, object, "#all", sql, nil, &results)
 		if err == nil {
 			t.Error(err)
 			return
 		}
 
 		where, args := AppendWheref(nil, nil, "lexxvel>$%v#all", 0)
-		err = QueryFilter(queryer, context.Background(), object, "#all", where, "and", args, "", 0, 0, &results)
+		err = QueryFilter(context.Background(), queryer, object, "#all", where, "and", args, "", 0, 0, &results)
 		if err == nil {
 			t.Error(err)
 			return
 		}
 
-		err = QueryWheref(queryer, context.Background(), object, "#all", "levxxel>$%v#all", []any{0}, "", 0, 0, &results)
+		err = QueryWheref(context.Background(), queryer, object, "#all", "levxxel>$%v#all", []any{0}, "", 0, 0, &results)
 		if err == nil {
 			t.Error(err)
 			return
 		}
 
-		err = QueryRowFilter(queryer, context.Background(), object, "#all", where, "and", args, &result)
+		err = QueryRowFilter(context.Background(), queryer, object, "#all", where, "and", args, &result)
 		if err == nil {
 			t.Error(err)
 			return
@@ -1517,37 +1516,37 @@ func testQuery(t *testing.T, queryer Queryer) {
 	{ //error
 		var idList []int
 		var idResult int
-		err = Query(queryer, context.Background(), int64(0), "o.tid#all", "select o.tid from crud_object o", nil, &idList)
+		err = Query(context.Background(), queryer, int64(0), "o.tid#all", "select o.tid from crud_object o", nil, &idList)
 		if err == nil {
 			t.Errorf("%v,%v", err, idList)
 			return
 		}
-		err = Query(queryer, context.Background(), int64(0), "o.tid#all", "select o.tid from crud_object o", nil, &idList, "tid") //not struct error
+		err = Query(context.Background(), queryer, int64(0), "o.tid#all", "select o.tid from crud_object o", nil, &idList, "tid") //not struct error
 		if err == nil {
 			t.Errorf("%v,%v", err, idList)
 			return
 		}
-		err = Query(queryer, context.Background(), int64(0), "o.tid#all", "select o.tid from crud_object o", nil, &idList, &idList)
+		err = Query(context.Background(), queryer, int64(0), "o.tid#all", "select o.tid from crud_object o", nil, &idList, &idList)
 		if err == nil {
 			t.Errorf("%v,%v", err, idList)
 			return
 		}
-		err = Query(queryer, context.Background(), int64(0), "o.tid#all", "select o.tid from crud_object o", nil, &idList, "")
+		err = Query(context.Background(), queryer, int64(0), "o.tid#all", "select o.tid from crud_object o", nil, &idList, "")
 		if err == nil {
 			t.Errorf("%v,%v", err, idList)
 			return
 		}
-		err = Query(queryer, context.Background(), MetaWith(object, int64(0)), "o.tid#all", "select o.tid from crud_object o", nil, &idList, "xxx") //not field
+		err = Query(context.Background(), queryer, MetaWith(object, int64(0)), "o.tid#all", "select o.tid from crud_object o", nil, &idList, "xxx") //not field
 		if err == nil {
 			t.Errorf("%v,%v", err, idList)
 			return
 		}
-		err = Query(queryer, context.Background(), object, "o.tid#all", "select o.tid from crud_object o", nil, &idList, "tid") //type not supported
+		err = Query(context.Background(), queryer, object, "o.tid#all", "select o.tid from crud_object o", nil, &idList, "tid") //type not supported
 		if err == nil {
 			t.Errorf("%v,%v", err, idList)
 			return
 		}
-		err = QueryRow(queryer, context.Background(), int64(0), "#all", "select tid from crud_object where tid=$1", []any{object.TID}, &idResult)
+		err = QueryRow(context.Background(), queryer, int64(0), "#all", "select tid from crud_object where tid=$1", []any{object.TID}, &idResult)
 		if err == nil {
 			t.Errorf("%v,%v", err, idResult)
 			return
@@ -1555,27 +1554,27 @@ func testQuery(t *testing.T, queryer Queryer) {
 	}
 	{ //error
 		var idMap map[int64]int
-		err = Query(queryer, context.Background(), object, "tid,int_value#all", "select tid,int_value from crud_object", nil, &idMap)
+		err = Query(context.Background(), queryer, object, "tid,int_value#all", "select tid,int_value from crud_object", nil, &idMap)
 		if err == nil {
 			t.Errorf("%v,%v", err, idMap)
 			return
 		}
-		err = Query(queryer, context.Background(), object, "tid,int_value#all", "select tid,int_value from crud_object", nil, &idMap, &idMap)
+		err = Query(context.Background(), queryer, object, "tid,int_value#all", "select tid,int_value from crud_object", nil, &idMap, &idMap)
 		if err == nil {
 			t.Errorf("%v,%v", err, idMap)
 			return
 		}
-		err = Query(queryer, context.Background(), object, "tid,int_value#all", "select tid,int_value from crud_object", nil, &idMap, "")
+		err = Query(context.Background(), queryer, object, "tid,int_value#all", "select tid,int_value from crud_object", nil, &idMap, "")
 		if err == nil {
 			t.Errorf("%v,%v", err, idMap)
 			return
 		}
-		err = Query(queryer, context.Background(), object, "tid,int_value#all", "select tid,int_value from crud_object", nil, &idMap, "xxx")
+		err = Query(context.Background(), queryer, object, "tid,int_value#all", "select tid,int_value from crud_object", nil, &idMap, "xxx")
 		if err == nil {
 			t.Errorf("%v,%v", err, idMap)
 			return
 		}
-		err = Query(queryer, context.Background(), object, "tid,int_value#all", "select tid,int_value from crud_object", nil, &idMap, "tid:xxx")
+		err = Query(context.Background(), queryer, object, "tid,int_value#all", "select tid,int_value from crud_object", nil, &idMap, "tid:xxx")
 		if err == nil {
 			t.Errorf("%v,%v", err, idMap)
 			return
@@ -1583,25 +1582,25 @@ func testQuery(t *testing.T, queryer Queryer) {
 	}
 	{ // map list error
 		var resultErr0 []map[int64]int64
-		err = Query(queryer, context.Background(), object, "tid,user_id#all", "select tid,user_id from crud_object", nil, &resultErr0, "abc")
+		err = Query(context.Background(), queryer, object, "tid,user_id#all", "select tid,user_id from crud_object", nil, &resultErr0, "abc")
 		if err == nil {
 			t.Errorf("%v,%v", err, resultErr0)
 			return
 		}
-		err = Query(queryer, context.Background(), object, "string_value,user_id#all", "select string_value,user_id from crud_object", nil, &resultErr0, "abc:user_id")
+		err = Query(context.Background(), queryer, object, "string_value,user_id#all", "select string_value,user_id from crud_object", nil, &resultErr0, "abc:user_id")
 		if err == nil {
 			t.Errorf("%v,%v", err, resultErr0)
 			return
 		}
 		var resultErr1 []map[string]int64
-		err = Query(queryer, context.Background(), object, "string_value,user_id#all", "select string_value,user_id from crud_object", nil, &resultErr1, "abc:string_value")
+		err = Query(context.Background(), queryer, object, "string_value,user_id#all", "select string_value,user_id from crud_object", nil, &resultErr1, "abc:string_value")
 		if err == nil {
 			t.Errorf("%v,%v", err, resultErr1)
 			return
 		}
 	}
 	{ //dest error
-		err = Query(queryer, context.Background(), converter.StringPtr(""), "#all", "select string_ptr from crud_object", nil)
+		err = Query(context.Background(), queryer, converter.StringPtr(""), "#all", "select string_ptr from crud_object", nil)
 		if err == nil {
 			t.Errorf("%v", err)
 			return
@@ -1622,44 +1621,44 @@ func testCount(t *testing.T, queryer Queryer) {
 		var countSQL string
 
 		countSQL = CountSQL(object, "")
-		err = Count(queryer, context.Background(), int64(0), "#all", countSQL, nil, &countValue)
+		err = Count(context.Background(), queryer, int64(0), "#all", countSQL, nil, &countValue)
 		if err != nil || countValue != 11 {
 			t.Error(err)
 			return
 		}
 		countSQL = CountSQL(object, "*")
-		err = Count(queryer, context.Background(), int64(0), "#all", countSQL, nil, &countValue)
+		err = Count(context.Background(), queryer, int64(0), "#all", countSQL, nil, &countValue)
 		if err != nil || countValue != 11 {
 			t.Error(err)
 			return
 		}
 		countSQL = CountSQL(object, "count(*)")
-		err = Count(queryer, context.Background(), int64(0), "#all", countSQL, nil, &countValue)
+		err = Count(context.Background(), queryer, int64(0), "#all", countSQL, nil, &countValue)
 		if err != nil || countValue != 11 {
 			t.Error(err)
 			return
 		}
 		countSQL = CountSQL(object, "count(*)#all")
-		err = Count(queryer, context.Background(), int64(0), "#all", countSQL, nil, &countValue)
+		err = Count(context.Background(), queryer, int64(0), "#all", countSQL, nil, &countValue)
 		if err != nil || countValue != 11 {
 			t.Error(err)
 			return
 		}
 		countSQL = CountSQL(object, "count(tid)")
-		err = Count(queryer, context.Background(), int64(0), "#all", countSQL, nil, &countValue)
+		err = Count(context.Background(), queryer, int64(0), "#all", countSQL, nil, &countValue)
 		if err != nil || countValue != 11 {
 			t.Error(err)
 			return
 		}
 		countSQL = CountSQL(object, "count(tid)#all")
-		err = Count(queryer, context.Background(), int64(0), "#all", countSQL, nil, &countValue)
+		err = Count(context.Background(), queryer, int64(0), "#all", countSQL, nil, &countValue)
 		if err != nil || countValue != 11 {
 			t.Error(err)
 			return
 		}
 
 		countSQL = Default.CountSQL(object, "count(tid)#all", "where tid>$1")
-		err = Default.Count(queryer, context.Background(), int64(0), "#all", countSQL, []any{0}, &countValue)
+		err = Default.Count(context.Background(), queryer, int64(0), "#all", countSQL, []any{0}, &countValue)
 		if err != nil || countValue != 11 {
 			t.Error(err)
 			return
@@ -1667,18 +1666,18 @@ func testCount(t *testing.T, queryer Queryer) {
 	}
 	{
 		var countVal int64
-		err = CountWheref(queryer, context.Background(), object, "count(tid)#all", "int_value>$1#all", []any{0}, "", &countVal, "tid")
+		err = CountWheref(context.Background(), queryer, object, "count(tid)#all", "int_value>$1#all", []any{0}, "", &countVal, "tid")
 		if err != nil || countVal != 7 {
 			t.Errorf("%v,%v", err, countVal)
 			return
 		}
-		err = CountWheref(queryer, context.Background(), MetaWith(object, int64(0)), "count(tid)#all", "int_value>$1#all", []any{0}, "", &countVal, "tid")
+		err = CountWheref(context.Background(), queryer, MetaWith(object, int64(0)), "count(tid)#all", "int_value>$1#all", []any{0}, "", &countVal, "tid")
 		if err != nil || countVal != 7 {
 			t.Errorf("%v,%v", err, countVal)
 			return
 		}
 
-		err = Default.CountWheref(queryer, context.Background(), object, "count(tid)#all", "int_value>$1#all", []any{0}, " ", &countVal, "tid")
+		err = Default.CountWheref(context.Background(), queryer, object, "count(tid)#all", "int_value>$1#all", []any{0}, " ", &countVal, "tid")
 		if err != nil || countVal != 7 {
 			t.Errorf("%v,%v", err, countVal)
 			return
@@ -1686,12 +1685,12 @@ func testCount(t *testing.T, queryer Queryer) {
 	}
 	{
 		var countVal int64
-		err = CountFilter(queryer, context.Background(), object, "count(tid)#all", nil, "", nil, "", &countVal, "tid")
+		err = CountFilter(context.Background(), queryer, object, "count(tid)#all", nil, "", nil, "", &countVal, "tid")
 		if err != nil || countVal != 11 {
 			t.Error(err)
 			return
 		}
-		err = Default.CountFilter(queryer, context.Background(), object, "count(tid)#all", nil, "", nil, "", &countVal, "tid")
+		err = Default.CountFilter(context.Background(), queryer, object, "count(tid)#all", nil, "", nil, "", &countVal, "tid")
 		if err != nil || countVal != 11 {
 			t.Error(err)
 			return
@@ -1699,7 +1698,7 @@ func testCount(t *testing.T, queryer Queryer) {
 	}
 	{ //error
 		var countVal int64
-		err = CountFilter(queryer, context.Background(), object, "abc(tid)#all", nil, "", nil, "", &countVal, "tid")
+		err = CountFilter(context.Background(), queryer, object, "abc(tid)#all", nil, "", nil, "", &countVal, "tid")
 		if err == nil {
 			t.Error(err)
 			return
@@ -1953,46 +1952,46 @@ func testUnify(t *testing.T, queryer Queryer) {
 	}
 	{
 		search := newSearch()
-		err = ApplyUnify(queryer, context.Background(), search)
+		err = ApplyUnify(context.Background(), queryer, search)
 		if err != nil || len(search.Query.Objects) < 1 || len(search.Query.UserIDs) < 1 || search.Count.All < 1 || search.Count.UserID < 1 {
 			t.Error(err)
 			return
 		}
 		skip := newSkip()
-		err = ApplyUnify(queryer, context.Background(), skip)
+		err = ApplyUnify(context.Background(), queryer, skip)
 		if err != nil || len(skip.Query.Objects) > 0 || len(skip.Query.UserIDs) > 0 || skip.Count.All < 1 || skip.Count.UserID < 1 {
 			t.Error(err)
 			return
 		}
-		err = ApplyUnify(queryer, context.Background(), skip, "ApplyCount")
+		err = ApplyUnify(context.Background(), queryer, skip, "ApplyCount")
 		if err != nil || skip.ApplyCount.All < 1 {
 			t.Error(err)
 			return
 		}
 		min := newMin()
-		err = ApplyUnify(queryer, context.Background(), min)
+		err = ApplyUnify(context.Background(), queryer, min)
 		if err != nil || len(min.Query.Objects) < 1 || len(min.Query.UserIDs) < 1 {
 			t.Error(err)
 			return
 		}
-		err = ApplyUnify(queryer, context.Background(), min, "ApplyQuery")
+		err = ApplyUnify(context.Background(), queryer, min, "ApplyQuery")
 		if err != nil || len(min.ApplyQuery.Objects) < 1 {
 			t.Error(err)
 			return
 		}
 		find := newFind()
-		err = Default.ApplyUnify(queryer, context.Background(), find)
+		err = Default.ApplyUnify(context.Background(), queryer, find)
 		if err != nil || find.QueryRow.Object == nil || find.QueryRow.UserID < 1 {
 			t.Error(err)
 			return
 		}
-		err = Default.ApplyUnify(queryer, context.Background(), find, "ApplyQueryRow")
+		err = Default.ApplyUnify(context.Background(), queryer, find, "ApplyQueryRow")
 		if err != nil || find.ApplyQueryRow.Object == nil || find.ApplyQueryRow.UserID < 1 {
 			t.Error(err)
 			return
 		}
 		filterValue := newFilterValue()
-		err = ApplyUnify(queryer, context.Background(), filterValue)
+		err = ApplyUnify(context.Background(), queryer, filterValue)
 		if err != nil ||
 			len(filterValue.Query.Objects) < 1 || len(filterValue.Query.Objects[0].Title) < 1 || filterValue.Query.Objects[0].IntValue > 0 ||
 			filterValue.QueryRow.Object == nil || len(filterValue.QueryRow.Object.Title) > 0 || filterValue.QueryRow.Object.IntValue < 1 ||
@@ -2001,7 +2000,7 @@ func testUnify(t *testing.T, queryer Queryer) {
 			return
 		}
 		filterGetter := newFilterGetter()
-		err = ApplyUnify(queryer, context.Background(), filterGetter)
+		err = ApplyUnify(context.Background(), queryer, filterGetter)
 		if err != nil ||
 			len(filterGetter.Query.Objects) < 1 || len(filterGetter.Query.Objects[0].Title) < 1 || filterGetter.Query.Objects[0].IntValue > 0 ||
 			filterGetter.QueryRow.Object == nil || len(filterGetter.QueryRow.Object.Title) > 0 || filterGetter.QueryRow.Object.IntValue < 1 ||
@@ -2012,29 +2011,12 @@ func testUnify(t *testing.T, queryer Queryer) {
 	}
 	{
 		search := newSearch()
-		err = QueryUnify(queryer, context.Background(), search)
+		err = QueryUnify(context.Background(), queryer, search)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = CountUnify(queryer, context.Background(), search)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		if err != nil || len(search.Query.Objects) < 1 || len(search.Query.UserIDs) < 1 || search.Count.All < 1 || search.Count.UserID < 1 {
-			t.Error(err)
-			return
-		}
-	}
-	{
-		search := newSearch()
-		err = QueryUnifyTarget(queryer, context.Background(), search, "Query")
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		err = CountUnifyTarget(queryer, context.Background(), search, "Count")
+		err = CountUnify(context.Background(), queryer, search)
 		if err != nil {
 			t.Error(err)
 			return
@@ -2046,12 +2028,12 @@ func testUnify(t *testing.T, queryer Queryer) {
 	}
 	{
 		search := newSearch()
-		err = Default.QueryUnify(queryer, context.Background(), search)
+		err = QueryUnifyTarget(context.Background(), queryer, search, "Query")
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = Default.CountUnify(queryer, context.Background(), search)
+		err = CountUnifyTarget(context.Background(), queryer, search, "Count")
 		if err != nil {
 			t.Error(err)
 			return
@@ -2063,12 +2045,29 @@ func testUnify(t *testing.T, queryer Queryer) {
 	}
 	{
 		search := newSearch()
-		err = Default.QueryUnifyTarget(queryer, context.Background(), search, "Query")
+		err = Default.QueryUnify(context.Background(), queryer, search)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = Default.CountUnifyTarget(queryer, context.Background(), search, "Count")
+		err = Default.CountUnify(context.Background(), queryer, search)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if err != nil || len(search.Query.Objects) < 1 || len(search.Query.UserIDs) < 1 || search.Count.All < 1 || search.Count.UserID < 1 {
+			t.Error(err)
+			return
+		}
+	}
+	{
+		search := newSearch()
+		err = Default.QueryUnifyTarget(context.Background(), queryer, search, "Query")
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		err = Default.CountUnifyTarget(context.Background(), queryer, search, "Count")
 		if err != nil {
 			t.Error(err)
 			return
@@ -2080,13 +2079,13 @@ func testUnify(t *testing.T, queryer Queryer) {
 	}
 	{
 		find := newFind()
-		err = QueryRowUnify(queryer, context.Background(), find)
+		err = QueryRowUnify(context.Background(), queryer, find)
 		if err != nil || find.QueryRow.Object == nil || find.QueryRow.UserID < 1 {
 			t.Error(err)
 			return
 		}
 		find = newFind()
-		err = QueryRowUnifyTarget(queryer, context.Background(), find, "QueryRow")
+		err = QueryRowUnifyTarget(context.Background(), queryer, find, "QueryRow")
 		if err != nil || find.QueryRow.Object == nil || find.QueryRow.UserID < 1 {
 			t.Error(err)
 			return
@@ -2094,13 +2093,13 @@ func testUnify(t *testing.T, queryer Queryer) {
 	}
 	{
 		find := newFind()
-		err = Default.QueryRowUnify(queryer, context.Background(), find)
+		err = Default.QueryRowUnify(context.Background(), queryer, find)
 		if err != nil || find.QueryRow.Object == nil || find.QueryRow.UserID < 1 {
 			t.Error(err)
 			return
 		}
 		find = newFind()
-		err = Default.QueryRowUnifyTarget(queryer, context.Background(), find, "QueryRow")
+		err = Default.QueryRowUnifyTarget(context.Background(), queryer, find, "QueryRow")
 		if err != nil || find.QueryRow.Object == nil || find.QueryRow.UserID < 1 {
 			t.Error(err)
 			return
@@ -2333,7 +2332,7 @@ func testUnify(t *testing.T, queryer Queryer) {
 	}
 	{
 		from := newModelFrom()
-		err = ApplyUnify(queryer, context.Background(), from)
+		err = ApplyUnify(context.Background(), queryer, from)
 		if err != nil || len(from.Query.Objects) < 1 || len(from.Query.Objects[0].Title) < 1 || from.Count.All < 1 {
 			fmt.Printf("--->%v\n", converter.JSON(from.Query.Objects))
 			fmt.Printf("--->%v\n", converter.JSON(from.Query.UserIDs))
@@ -2344,7 +2343,7 @@ func testUnify(t *testing.T, queryer Queryer) {
 	}
 	{
 		sel := newModelSelect()
-		err = ApplyUnify(queryer, context.Background(), sel)
+		err = ApplyUnify(context.Background(), queryer, sel)
 		if err != nil || len(sel.Query.Objects) < 1 || len(sel.Query.Objects[0].Title) < 1 || sel.Count.All < 1 {
 			fmt.Printf("--->%v\n", converter.JSON(sel.Query.Objects))
 			fmt.Printf("--->%v\n", converter.JSON(sel.Query.UserIDs))
@@ -2399,17 +2398,17 @@ func testUnifyError(t *testing.T, queryer Queryer) {
 	search.Count.Enabled = true
 	search.Page.Offset = 0
 	search.Page.Limit = 100
-	err = QueryUnify(queryer, context.Background(), search)
+	err = QueryUnify(context.Background(), queryer, search)
 	if err == nil {
 		t.Error(err)
 		return
 	}
-	err = QueryRowUnify(queryer, context.Background(), search)
+	err = QueryRowUnify(context.Background(), queryer, search)
 	if err == nil {
 		t.Error(err)
 		return
 	}
-	err = CountUnify(queryer, context.Background(), search)
+	err = CountUnify(context.Background(), queryer, search)
 	if err == nil {
 		t.Error(err)
 		return

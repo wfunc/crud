@@ -6,16 +6,19 @@ import (
 	"github.com/wfunc/util/xsql"
 )
 
+// TableSQLSQLITE defines the SQL query to retrieve table information from SQLite.
 const TableSQLSQLITE = `
 select name,type,'' from sqlite_master
 where type='table' and name <> 'sqlite_sequence'
 order by name asc
 `
 
+// ColumnSQLSQLITE defines the SQL query to retrieve column information from SQLite.
 const ColumnSQLSQLITE = `
 select name,type,pk,"notnull",dflt_value,cid,type,'' from pragma_table_info($1)
 `
 
+// TypeMapSQLITE defines the mapping of SQLite data types to Go types.
 var TypeMapSQLITE = map[string][]string{
 	//int
 	"integer": {"int64", "*int64"},
@@ -42,15 +45,18 @@ var TypeMapSQLITE = map[string][]string{
 	"boolean": {"bool", "*bool"},
 }
 
+// CodeSliceSQLITE defines the SQL snippets for SQLite.
 var CodeSliceSQLITE = map[string]string{
 	"RowLock": "",
 }
 
+// NameConvSQLITE converts the field name based on the context and field type for SQLite.
 func NameConvSQLITE(on, name string, field reflect.StructField) string {
 	return name
 }
 
-func ParmConvSQLITE(on, fieldName, fieldFunc string, field reflect.StructField, value any) any {
+// ParamConvSQLITE converts the value based on the context and field type for SQLite.
+func ParamConvSQLITE(on, fieldName, fieldFunc string, field reflect.StructField, value any) any {
 	if c, ok := value.(xsql.ArrayConverter); on == "where" && ok {
 		return c.InArray()
 	}

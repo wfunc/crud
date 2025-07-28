@@ -101,7 +101,7 @@ func init() {
 	GetQueryer = func() crud.Queryer { return sharedPG }
 	crud.Default.Verbose = true
 	crud.Default.NameConv = gen.NameConvPG
-	crud.Default.ParmConv = gen.ParmConvPG
+	crud.Default.ParamConv = gen.ParamConvPG
 }
 `
 
@@ -233,7 +233,7 @@ func init() {
 	GetQueryer = func() crud.Queryer { return sharedSQLITE }
 	crud.Default.Verbose = true
 	crud.Default.NameConv = gen.NameConvSQLITE
-	crud.Default.ParmConv = gen.ParmConvSQLITE
+	crud.Default.ParamConv = gen.ParamConvSQLITE
 }
 `
 

@@ -10,9 +10,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var sharedPG *TestDbQueryer
+var sharedPG *TestDBQueryer
 
-func getPG() *TestDbQueryer {
+func getPG() *TestDBQueryer {
 	if sharedPG != nil {
 		return sharedPG
 	}
@@ -23,7 +23,7 @@ func getPG() *TestDbQueryer {
 	db.SetConnMaxLifetime(time.Minute * 3)
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(10)
-	sharedPG = NewTestDbQueryer(db)
+	sharedPG = NewTestDBQueryer(db)
 	_, _, err = sharedPG.Exec(context.Background(), testsql.PG_DROP)
 	if err != nil {
 		panic(err)
@@ -40,17 +40,19 @@ func clearPG() {
 	queryer.Exec(context.Background(), testsql.PG_CLEAR)
 }
 
-type TestDbQueryer struct {
+// TestDBQueryer is a test wrapper around sql.DB
+type TestDBQueryer struct {
 	*sql.DB
 	ErrNoRows error
 }
 
-func NewTestDbQueryer(db *sql.DB) (queryer *TestDbQueryer) {
-	queryer = &TestDbQueryer{DB: db, ErrNoRows: ErrNoRows}
+// NewTestDBQueryer creates a new TestDBQueryer
+func NewTestDBQueryer(db *sql.DB) (queryer *TestDBQueryer) {
+	queryer = &TestDBQueryer{DB: db, ErrNoRows: ErrNoRows}
 	return
 }
 
-func (d *TestDbQueryer) getErrNoRows() (err error) {
+func (d *TestDBQueryer) getErrNoRows() (err error) {
 	if d.ErrNoRows == nil {
 		err = ErrNoRows
 	} else {
@@ -59,10 +61,10 @@ func (d *TestDbQueryer) getErrNoRows() (err error) {
 	return
 }
 
-func (d *TestDbQueryer) Exec(ctx context.Context, query string, args ...any) (insertId, affected int64, err error) {
+func (d *TestDBQueryer) Exec(ctx context.Context, query string, args ...any) (insertID, affected int64, err error) {
 	res, err := d.DB.ExecContext(ctx, query, args...)
 	if err == nil {
-		insertId, _ = res.LastInsertId() //ignore error for some driver is not supported
+		insertID, _ = res.LastInsertId() //ignore error for some driver is not supported
 	}
 	if err == nil {
 		affected, err = res.RowsAffected()
@@ -70,20 +72,20 @@ func (d *TestDbQueryer) Exec(ctx context.Context, query string, args ...any) (in
 	return
 }
 
-func (d *TestDbQueryer) ExecRow(ctx context.Context, query string, args ...any) (insertId int64, err error) {
-	insertId, affected, err := d.Exec(ctx, query, args...)
+func (d *TestDBQueryer) ExecRow(ctx context.Context, query string, args ...any) (insertID int64, err error) {
+	insertID, affected, err := d.Exec(ctx, query, args...)
 	if err == nil && affected < 1 {
 		err = d.getErrNoRows()
 	}
 	return
 }
 
-func (d *TestDbQueryer) Query(ctx context.Context, query string, args ...any) (rows Rows, err error) {
+func (d *TestDBQueryer) Query(ctx context.Context, query string, args ...any) (rows Rows, err error) {
 	rows, err = d.DB.QueryContext(ctx, query, args...)
 	return
 }
 
-func (d *TestDbQueryer) QueryRow(ctx context.Context, query string, args ...any) (row Row) {
+func (d *TestDBQueryer) QueryRow(ctx context.Context, query string, args ...any) (row Row) {
 	row = d.DB.QueryRowContext(ctx, query, args...)
 	return
 }

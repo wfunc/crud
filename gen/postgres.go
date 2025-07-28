@@ -7,6 +7,7 @@ import (
 	"github.com/wfunc/util/xsql"
 )
 
+// TableSQLPG defines the SQL query to retrieve table information from PostgreSQL.
 const TableSQLPG = `
 SELECT
     c.relname AS name,
@@ -19,6 +20,7 @@ AND c.relkind = 'r'
 ORDER BY c.relname
 `
 
+// ColumnSQLPG defines the SQL query to retrieve column information from PostgreSQL.
 const ColumnSQLPG = `
 SELECT
     a.attname AS name,
@@ -61,6 +63,7 @@ WHERE a.attisdropped = false
 ORDER BY a.attnum
 `
 
+// TypeMapPG defines the mapping of PostgreSQL data types to Go types.
 var TypeMapPG = map[string][]string{
 	//int
 	"smallint":    {"int", "*int"},
@@ -89,19 +92,21 @@ var TypeMapPG = map[string][]string{
 	"jsonb": {"xsql.M", "xsql.M"},
 }
 
+// CodeSlicePG defines the SQL snippets for PostgreSQL.
 var CodeSlicePG = map[string]string{
 	"RowLock": "for update",
 }
 
+// NameConvPG converts the field name based on the context and field type for PostgreSQL.
 func NameConvPG(on, name string, field reflect.StructField) string {
 	if on == "query" && strings.HasPrefix(field.Type.String(), "xsql.") && field.Type.String() != "xsql.Time" {
 		return name + "::text"
-	} else {
-		return name
 	}
+	return name
 }
 
-func ParmConvPG(on, fieldName, fieldFunc string, field reflect.StructField, value any) any {
+// ParamConvPG converts the value based on the context and field type for PostgreSQL.
+func ParamConvPG(on, fieldName, fieldFunc string, field reflect.StructField, value any) any {
 	if c, ok := value.(xsql.ArrayConverter); on == "where" && ok {
 		return c.DbArray()
 	}
