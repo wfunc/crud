@@ -74,7 +74,7 @@ func init() {
 	db.SetConnMaxLifetime(time.Minute * 3)
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(10)
-	sharedPG := sqlx.NewDbQueryer(db)
+	sharedPG := sqlx.NewDBQueryer(db)
 	_, _, err = sharedPG.Exec(context.Background(), testsql.PG_DROP)
 	if err != nil {
 		panic(err)

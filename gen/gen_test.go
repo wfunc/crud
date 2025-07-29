@@ -33,9 +33,9 @@ func nameConv(isTable bool, name string) string {
 	}
 }
 
-var sharedPG *sqlx.DbQueryer
+var sharedPG *sqlx.DBQueryer
 
-func getPG() *sqlx.DbQueryer {
+func getPG() *sqlx.DBQueryer {
 	if sharedPG != nil {
 		return sharedPG
 	}
@@ -46,7 +46,7 @@ func getPG() *sqlx.DbQueryer {
 	db.SetConnMaxLifetime(time.Minute * 3)
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(10)
-	sharedPG = sqlx.NewDbQueryer(db)
+	sharedPG = sqlx.NewDBQueryer(db)
 	_, _, err = sharedPG.Exec(context.Background(), testsql.PG_DROP)
 	if err != nil {
 		panic(err)
@@ -83,7 +83,7 @@ func init() {
 	db.SetConnMaxLifetime(time.Minute * 3)
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(10)
-	sharedPG := sqlx.NewDbQueryer(db)
+	sharedPG := sqlx.NewDBQueryer(db)
 	_, _, err = sharedPG.Exec(context.Background(), testsql.PG_DROP)
 	if err != nil {
 		panic(err)
@@ -170,9 +170,9 @@ func TestPgGen(t *testing.T) {
 	}
 }
 
-var sharedSQLITE *sqlx.DbQueryer
+var sharedSQLITE *sqlx.DBQueryer
 
-func getSQLITE() *sqlx.DbQueryer {
+func getSQLITE() *sqlx.DBQueryer {
 	if sharedSQLITE != nil {
 		return sharedSQLITE
 	}
@@ -181,7 +181,7 @@ func getSQLITE() *sqlx.DbQueryer {
 		panic(err)
 	}
 	db.SetMaxOpenConns(1)
-	sharedSQLITE = sqlx.NewDbQueryer(db)
+	sharedSQLITE = sqlx.NewDBQueryer(db)
 	_, _, err = sharedSQLITE.Exec(context.Background(), testsql.SQLITE_DROP)
 	if err != nil {
 		panic(err)
@@ -215,7 +215,7 @@ func init() {
 		panic(err)
 	}
 	db.SetMaxOpenConns(1)
-	sharedSQLITE := sqlx.NewDbQueryer(db)
+	sharedSQLITE := sqlx.NewDBQueryer(db)
 	_, _, err = sharedSQLITE.Exec(context.Background(), testsql.SQLITE_DROP)
 	if err != nil {
 		panic(err)

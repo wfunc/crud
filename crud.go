@@ -1,6 +1,4 @@
-// Package crud is simple curd tools to process database
-//
-//nolint:golint
+// Package crud provides generic CRUD operations for database access and manipulation.
 package crud
 
 import (
@@ -25,7 +23,7 @@ type ZeroChecker interface {
 	IsZero() bool
 }
 
-// ArrayConverter is an interface for converting arrays.
+// TableNameGetter is an interface for getting table names.
 type TableNameGetter interface {
 	GetTableName(args ...any) string
 }
@@ -341,14 +339,14 @@ func (c *CRUD) FilterFormatCall(formats string, args []any, call func(format str
 }
 
 // FilterWhere processes the fields of a value based on the provided filter and returns the WHERE clause and arguments.
-func (c *CRUD) FilterWhere(args []any, v any, filter string) (where_ []string, args_ []any) {
-	args_ = args
+func (c *CRUD) FilterWhere(args []any, v any, filter string) (whereClauses []string, updatedArgs []any) {
+	updatedArgs = args
 	c.FilterFieldCall("where", v, filter, func(fieldName, fieldFunc string, field reflect.StructField, fieldValue any) {
 		join := field.Tag.Get("join")
 		if field.Type.Kind() == reflect.Struct && len(join) > 0 {
 			var cmpInner []string
-			cmpInner, args_ = c.FilterWhere(args_, fieldValue, field.Tag.Get("filter"))
-			where_ = append(where_, "("+strings.Join(cmpInner, " "+join+" ")+")")
+			cmpInner, updatedArgs = c.FilterWhere(updatedArgs, fieldValue, field.Tag.Get("filter"))
+			whereClauses = append(whereClauses, "("+strings.Join(cmpInner, " "+join+" ")+")")
 			return
 		}
 		cmp := field.Tag.Get("cmp")
@@ -364,121 +362,121 @@ func (c *CRUD) FilterWhere(args []any, v any, filter string) (where_ []string, a
 		if (strings.Contains(cmp, " or ") || strings.Contains(cmp, " and ")) && !strings.HasPrefix(cmp, "(") {
 			cmp = "(" + cmp + ")"
 		}
-		args_ = append(args_, c.ParamConv("where", fieldName, fieldFunc, field, fieldValue))
-		where_ = append(where_, c.Sprintf(cmp, len(args_)))
+		updatedArgs = append(updatedArgs, c.ParamConv("where", fieldName, fieldFunc, field, fieldValue))
+		whereClauses = append(whereClauses, c.Sprintf(cmp, len(updatedArgs)))
 	})
 	return
 }
 
 // AppendInsert appends a field and its parameter to the insert statement.
-func AppendInsert(fields, param []string, args []any, ok bool, format string, v any) (fields_, param_ []string, args_ []any) {
-	fields_, param_, args_ = Default.AppendInsert(fields, param, args, ok, format, v)
+func AppendInsert(fields, param []string, args []any, ok bool, format string, v any) (updatedFields, updatedParams []string, updatedArgs []any) {
+	updatedFields, updatedParams, updatedArgs = Default.AppendInsert(fields, param, args, ok, format, v)
 	return
 }
 
 // AppendInsert appends a field and its parameter to the insert statement.
-func (c *CRUD) AppendInsert(fields, param []string, args []any, ok bool, format string, v any) (fields_, param_ []string, args_ []any) {
-	fields_, param_, args_ = fields, param, args
+func (c *CRUD) AppendInsert(fields, param []string, args []any, ok bool, format string, v any) (updatedFields, updatedParams []string, updatedArgs []any) {
+	updatedFields, updatedParams, updatedArgs = fields, param, args
 	if ok {
-		args_ = append(args_, c.ParamConv("insert", format, "", reflect.StructField{}, v))
+		updatedArgs = append(updatedArgs, c.ParamConv("insert", format, "", reflect.StructField{}, v))
 		parts := strings.SplitN(format, "=", 2)
-		param_ = append(param_, c.Sprintf(parts[1], len(args_)))
-		fields_ = append(fields_, parts[0])
+		updatedParams = append(updatedParams, c.Sprintf(parts[1], len(updatedArgs)))
+		updatedFields = append(updatedFields, parts[0])
 	}
 	return
 }
 
 // AppendInsertf appends multiple fields and their parameters to the insert statement.
-func AppendInsertf(fields, param []string, args []any, formats string, v ...any) (fields_, param_ []string, args_ []any) {
-	fields_, param_, args_ = Default.AppendInsertf(fields, param, args, formats, v...)
+func AppendInsertf(fields, param []string, args []any, formats string, v ...any) (updatedFields, updatedParams []string, updatedArgs []any) {
+	updatedFields, updatedParams, updatedArgs = Default.AppendInsertf(fields, param, args, formats, v...)
 	return
 }
 
 // AppendInsertf appends multiple fields and their parameters to the insert statement.
-func (c *CRUD) AppendInsertf(fields, param []string, args []any, formats string, v ...any) (fields_, param_ []string, args_ []any) {
-	fields_, param_, args_ = fields, param, args
+func (c *CRUD) AppendInsertf(fields, param []string, args []any, formats string, v ...any) (updatedFields, updatedParams []string, updatedArgs []any) {
+	updatedFields, updatedParams, updatedArgs = fields, param, args
 	c.FilterFormatCall(formats, v, func(format string, arg any) {
-		args_ = append(args_, c.ParamConv("insert", format, "", reflect.StructField{}, arg))
+		updatedArgs = append(updatedArgs, c.ParamConv("insert", format, "", reflect.StructField{}, arg))
 		parts := strings.SplitN(format, "=", 2)
-		param_ = append(param_, c.Sprintf(parts[1], len(args_)))
-		fields_ = append(fields_, parts[0])
+		updatedParams = append(updatedParams, c.Sprintf(parts[1], len(updatedArgs)))
+		updatedFields = append(updatedFields, parts[0])
 	})
 	return
 }
 
 // AppendSet appends a field and its parameter to the SET clause.
-func AppendSet(sets []string, args []any, ok bool, format string, v any) (sets_ []string, args_ []any) {
-	sets_, args_ = Default.AppendSet(sets, args, ok, format, v)
+func AppendSet(sets []string, args []any, ok bool, format string, v any) (updatedSets []string, updatedArgs []any) {
+	updatedSets, updatedArgs = Default.AppendSet(sets, args, ok, format, v)
 	return
 }
 
 // AppendSet appends a field and its parameter to the SET clause.
-func (c *CRUD) AppendSet(sets []string, args []any, ok bool, format string, v any) (sets_ []string, args_ []any) {
-	sets_, args_ = sets, args
+func (c *CRUD) AppendSet(sets []string, args []any, ok bool, format string, v any) (updatedSets []string, updatedArgs []any) {
+	updatedSets, updatedArgs = sets, args
 	if ok {
-		args_ = append(args_, c.ParamConv("update", format, "", reflect.StructField{}, v))
-		sets_ = append(sets_, c.Sprintf(format, len(args_)))
+		updatedArgs = append(updatedArgs, c.ParamConv("update", format, "", reflect.StructField{}, v))
+		updatedSets = append(updatedSets, c.Sprintf(format, len(updatedArgs)))
 	}
 	return
 }
 
 // AppendSetf appends multiple fields and their parameters to the SET clause.
-func AppendSetf(sets []string, args []any, formats string, v ...any) (sets_ []string, args_ []any) {
-	sets_, args_ = Default.AppendSetf(sets, args, formats, v...)
+func AppendSetf(sets []string, args []any, formats string, v ...any) (updatedSets []string, updatedArgs []any) {
+	updatedSets, updatedArgs = Default.AppendSetf(sets, args, formats, v...)
 	return
 }
 
 // AppendSetf appends multiple fields and their parameters to the SET clause.
-func (c *CRUD) AppendSetf(sets []string, args []any, formats string, v ...any) (sets_ []string, args_ []any) {
-	sets_, args_ = sets, args
+func (c *CRUD) AppendSetf(sets []string, args []any, formats string, v ...any) (updatedSets []string, updatedArgs []any) {
+	updatedSets, updatedArgs = sets, args
 	c.FilterFormatCall(formats, v, func(format string, arg any) {
-		args_ = append(args_, c.ParamConv("update", format, "", reflect.StructField{}, arg))
-		sets_ = append(sets_, c.Sprintf(format, len(args_)))
+		updatedArgs = append(updatedArgs, c.ParamConv("update", format, "", reflect.StructField{}, arg))
+		updatedSets = append(updatedSets, c.Sprintf(format, len(updatedArgs)))
 	})
 	return
 }
 
 // AppendWhere appends a field and its parameter to the WHERE clause.
-func AppendWhere(where []string, args []any, ok bool, format string, v any) (where_ []string, args_ []any) {
-	where_, args_ = Default.AppendWhere(where, args, ok, format, v)
+func AppendWhere(where []string, args []any, ok bool, format string, v any) (whereClauses []string, updatedArgs []any) {
+	whereClauses, updatedArgs = Default.AppendWhere(where, args, ok, format, v)
 	return
 }
 
 // AppendWhere appends a field and its parameter to the WHERE clause.
-func (c *CRUD) AppendWhere(where []string, args []any, ok bool, format string, v any) (where_ []string, args_ []any) {
-	where_, args_ = where, args
+func (c *CRUD) AppendWhere(where []string, args []any, ok bool, format string, v any) (whereClauses []string, updatedArgs []any) {
+	whereClauses, updatedArgs = where, args
 	if ok {
-		args_ = append(args_, c.ParamConv("where", format, "", reflect.StructField{}, v))
-		where_ = append(where_, c.Sprintf(format, len(args_)))
+		updatedArgs = append(updatedArgs, c.ParamConv("where", format, "", reflect.StructField{}, v))
+		whereClauses = append(whereClauses, c.Sprintf(format, len(updatedArgs)))
 	}
 	return
 }
 
 // AppendWheref appends multiple fields and their parameters to the WHERE clause.
-func AppendWheref(where []string, args []any, format string, v ...any) (where_ []string, args_ []any) {
-	where_, args_ = Default.AppendWheref(where, args, format, v...)
+func AppendWheref(where []string, args []any, format string, v ...any) (whereClauses []string, updatedArgs []any) {
+	whereClauses, updatedArgs = Default.AppendWheref(where, args, format, v...)
 	return
 }
 
 // AppendWheref appends multiple fields and their parameters to the WHERE clause.
-func (c *CRUD) AppendWheref(where []string, args []any, formats string, v ...any) (where_ []string, args_ []any) {
-	where_, args_ = where, args
+func (c *CRUD) AppendWheref(where []string, args []any, formats string, v ...any) (whereClauses []string, updatedArgs []any) {
+	whereClauses, updatedArgs = where, args
 	c.FilterFormatCall(formats, v, func(format string, arg any) {
-		args_ = append(args_, c.ParamConv("where", format, "", reflect.StructField{}, arg))
-		where_ = append(where_, c.Sprintf(format, len(args_)))
+		updatedArgs = append(updatedArgs, c.ParamConv("where", format, "", reflect.StructField{}, arg))
+		whereClauses = append(whereClauses, c.Sprintf(format, len(updatedArgs)))
 	})
 	return
 }
 
 // AppendWhereUnify appends a unified WHERE clause based on the provided value and enabled fields.
-func AppendWhereUnify(where []string, args []any, v any, enabled ...string) (where_ []string, args_ []any) {
-	where_, args_ = Default.AppendWhereUnify(where, args, v, enabled...)
+func AppendWhereUnify(where []string, args []any, v any, enabled ...string) (whereClauses []string, updatedArgs []any) {
+	whereClauses, updatedArgs = Default.AppendWhereUnify(where, args, v, enabled...)
 	return
 }
 
 // AppendWhereUnify appends a unified WHERE clause based on the provided value and enabled fields.
-func (c *CRUD) AppendWhereUnify(where []string, args []any, v any, enabled ...string) (where_ []string, args_ []any) {
-	where_, args_ = where, args
+func (c *CRUD) AppendWhereUnify(where []string, args []any, v any, enabled ...string) (whereClauses []string, updatedArgs []any) {
+	whereClauses, updatedArgs = where, args
 	reflectValue := reflect.Indirect(reflect.ValueOf(v))
 	if len(enabled) < 1 {
 		enabled = append(enabled, "Where")
@@ -489,53 +487,53 @@ func (c *CRUD) AppendWhereUnify(where []string, args []any, v any, enabled ...st
 			continue
 		}
 		modelType, _ := reflectValue.Type().FieldByName(key)
-		filterWhere, filterArgs := c.FilterWhere(args, modelValue.Addr().Interface(), modelType.Tag.Get("filter"))
-		where_ = append(where_, filterWhere...)
-		args_ = append(args_, filterArgs...)
+		filterWhere, filterArgs := c.FilterWhere(updatedArgs, modelValue.Addr().Interface(), modelType.Tag.Get("filter"))
+		whereClauses = append(whereClauses, filterWhere...)
+		updatedArgs = filterArgs
 	}
 	return
 }
 
 // JoinWhere constructs a WHERE clause based on the provided SQL and conditions.
-func JoinWhere(sql string, where []string, sep string, suffix ...string) (sql_ string) {
-	sql_ = Default.joinWhere(1, sql, where, sep, suffix...)
+func JoinWhere(sql string, where []string, sep string, suffix ...string) (resultSQL string) {
+	resultSQL = Default.joinWhere(1, sql, where, sep, suffix...)
 	return
 }
 
 // JoinWhere constructs a WHERE clause based on the provided SQL and conditions.
-func (c *CRUD) JoinWhere(sql string, where []string, sep string, suffix ...string) (sql_ string) {
-	sql_ = c.joinWhere(1, sql, where, sep, suffix...)
+func (c *CRUD) JoinWhere(sql string, where []string, sep string, suffix ...string) (resultSQL string) {
+	resultSQL = c.joinWhere(1, sql, where, sep, suffix...)
 	return
 }
 
-func (c *CRUD) joinWhere(caller int, sql string, where []string, sep string, suffix ...string) (sql_ string) {
-	sql_ = sql
+func (c *CRUD) joinWhere(caller int, sql string, where []string, sep string, suffix ...string) (resultSQL string) {
+	resultSQL = sql
 	if len(where) > 0 {
-		sql_ += " where " + strings.Join(where, " "+sep+" ")
+		resultSQL += " where " + strings.Join(where, " "+sep+" ")
 	}
 	if len(suffix) > 0 {
-		sql_ += " " + strings.Join(suffix, " ")
+		resultSQL += " " + strings.Join(suffix, " ")
 	}
 	if c.Verbose {
-		c.Log(caller, "CRUD join where done with sql:%v", sql_)
+		c.Log(caller, "CRUD join where done with sql:%v", resultSQL)
 	}
 	return
 }
 
 // JoinWheref constructs a WHERE clause based on the provided SQL and formatted conditions.
-func JoinWheref(sql string, args []any, formats string, formatArgs ...any) (sql_ string, args_ []any) {
-	sql_, args_ = Default.joinWheref(1, sql, args, formats, formatArgs...)
+func JoinWheref(sql string, args []any, formats string, formatArgs ...any) (resultSQL string, updatedArgs []any) {
+	resultSQL, updatedArgs = Default.joinWheref(1, sql, args, formats, formatArgs...)
 	return
 }
 
 // JoinWheref constructs a WHERE clause based on the provided SQL and formatted conditions.
-func (c *CRUD) JoinWheref(sql string, args []any, formats string, formatArgs ...any) (sql_ string, args_ []any) {
-	sql_, args_ = c.joinWheref(1, sql, args, formats, formatArgs...)
+func (c *CRUD) JoinWheref(sql string, args []any, formats string, formatArgs ...any) (resultSQL string, updatedArgs []any) {
+	resultSQL, updatedArgs = c.joinWheref(1, sql, args, formats, formatArgs...)
 	return
 }
 
-func (c *CRUD) joinWheref(caller int, sql string, args []any, formats string, formatArgs ...any) (sql_ string, args_ []any) {
-	sql_, args_ = sql, args
+func (c *CRUD) joinWheref(caller int, sql string, args []any, formats string, formatArgs ...any) (resultSQL string, updatedArgs []any) {
+	resultSQL, updatedArgs = sql, args
 	if len(formats) < 1 {
 		return
 	}
@@ -551,24 +549,24 @@ func (c *CRUD) joinWheref(caller int, sql string, args []any, formats string, fo
 			}
 		}
 	}
-	where, args_ = c.AppendWheref(nil, args_, formats, formatArgs...)
-	sql_ = c.joinWhere(caller+1, sql, where, sep)
+	where, updatedArgs = c.AppendWheref(nil, updatedArgs, formats, formatArgs...)
+	resultSQL = c.joinWhere(caller+1, sql, where, sep)
 	return
 }
 
 // JoinWhereUnify constructs a unified WHERE clause based on the provided SQL and value.
-func JoinWhereUnify(sql string, args []any, v any, enabled ...string) (sql_ string, args_ []any) {
-	sql_, args_ = Default.joinWhereUnify(1, sql, args, v, enabled...)
+func JoinWhereUnify(sql string, args []any, v any, enabled ...string) (resultSQL string, updatedArgs []any) {
+	resultSQL, updatedArgs = Default.joinWhereUnify(1, sql, args, v, enabled...)
 	return
 }
 
 // JoinWhereUnify constructs a unified WHERE clause based on the provided SQL and value.
-func (c *CRUD) JoinWhereUnify(sql string, args []any, v any, enabled ...string) (sql_ string, args_ []any) {
-	sql_, args_ = c.joinWhereUnify(1, sql, args, v, enabled...)
+func (c *CRUD) JoinWhereUnify(sql string, args []any, v any, enabled ...string) (resultSQL string, updatedArgs []any) {
+	resultSQL, updatedArgs = c.joinWhereUnify(1, sql, args, v, enabled...)
 	return
 }
 
-func (c *CRUD) joinWhereUnify(caller int, sql string, args []any, v any, enabled ...string) (sql_ string, args_ []any) {
+func (c *CRUD) joinWhereUnify(caller int, sql string, args []any, v any, enabled ...string) (resultSQL string, updatedArgs []any) {
 	reflectValue := reflect.Indirect(reflect.ValueOf(v))
 	reflectType := reflectValue.Type()
 	if len(enabled) < 1 {
@@ -579,15 +577,15 @@ func (c *CRUD) joinWhereUnify(caller int, sql string, args []any, v any, enabled
 		whereType, _ := reflectType.FieldByName(key)
 		whereJoin += " " + whereType.Tag.Get("join")
 	}
-	args_ = args
-	where, args_ := c.AppendWhereUnify(nil, args_, v)
-	sql_ = c.joinWhere(caller+1, sql, where, whereJoin)
+	updatedArgs = args
+	where, updatedArgs := c.AppendWhereUnify(nil, updatedArgs, v)
+	resultSQL = c.joinWhere(caller+1, sql, where, whereJoin)
 	return
 }
 
 // JoinPage constructs a paginated SQL query based on the provided SQL, orderby, offset, and limit.
-func JoinPage(sql, orderby string, offset, limit int) (sql_ string) {
-	sql_ = Default.joinPage(1, sql, orderby, offset, limit)
+func JoinPage(sql, orderby string, offset, limit int) (resultSQL string) {
+	resultSQL = Default.joinPage(1, sql, orderby, offset, limit)
 	return
 }
 
@@ -660,7 +658,7 @@ func (c *CRUD) queryerExec(ctx context.Context, queryer any, sql string, args []
 	}
 	if q, ok := queryer.(Queryer); ok {
 		insertID, affected, err = q.Exec(ctx, sql, args...)
-	} else if q, ok := queryer.(CrudQueryer); ok {
+	} else if q, ok := queryer.(ExtendedQueryer); ok {
 		insertID, affected, err = q.CrudExec(ctx, sql, args...)
 	} else {
 		panic("queryer is not supported")
@@ -675,7 +673,7 @@ func (c *CRUD) queryerQuery(ctx context.Context, queryer any, sql string, args [
 	}
 	if q, ok := queryer.(Queryer); ok {
 		rows, err = q.Query(ctx, sql, args...)
-	} else if q, ok := queryer.(CrudQueryer); ok {
+	} else if q, ok := queryer.(ExtendedQueryer); ok {
 		rows, err = q.CrudQuery(ctx, sql, args...)
 	} else {
 		panic(fmt.Sprintf("queryer %v is not supported", reflect.TypeOf(queryer)))
@@ -690,7 +688,7 @@ func (c *CRUD) queryerQueryRow(ctx context.Context, queryer any, sql string, arg
 	}
 	if q, ok := queryer.(Queryer); ok {
 		row = q.QueryRow(ctx, sql, args...)
-	} else if q, ok := queryer.(CrudQueryer); ok {
+	} else if q, ok := queryer.(ExtendedQueryer); ok {
 		row = q.CrudQueryRow(ctx, sql, args...)
 	} else {
 		panic(fmt.Sprintf("queryer %v is not supported", reflect.TypeOf(queryer)))
@@ -699,26 +697,26 @@ func (c *CRUD) queryerQueryRow(ctx context.Context, queryer any, sql string, arg
 }
 
 // InsertArgs generates the insert arguments based on the provided value and filter.
-func InsertArgs(v any, filter string, args []any) (table string, fields, param []string, args_ []any) {
-	table, fields, param, args_ = Default.insertArgs(1, v, filter, args)
+func InsertArgs(v any, filter string, args []any) (table string, fields, param []string, updatedArgs []any) {
+	table, fields, param, updatedArgs = Default.insertArgs(1, v, filter, args)
 	return
 }
 
 // InsertArgs generates the insert arguments based on the provided value and filter.
-func (c *CRUD) InsertArgs(v any, filter string, args []any) (table string, fields, param []string, args_ []any) {
-	table, fields, param, args_ = c.insertArgs(1, v, filter, args)
+func (c *CRUD) InsertArgs(v any, filter string, args []any) (table string, fields, param []string, updatedArgs []any) {
+	table, fields, param, updatedArgs = c.insertArgs(1, v, filter, args)
 	return
 }
 
-func (c *CRUD) insertArgs(caller int, v any, filter string, args []any) (table string, fields, param []string, args_ []any) {
-	args_ = args
+func (c *CRUD) insertArgs(caller int, v any, filter string, args []any) (table string, fields, param []string, updatedArgs []any) {
+	updatedArgs = args
 	table = c.FilterFieldCall("insert", v, filter, func(fieldName, fieldFunc string, field reflect.StructField, value any) {
-		args_ = append(args_, c.ParamConv("insert", fieldName, fieldFunc, field, value))
+		updatedArgs = append(updatedArgs, c.ParamConv("insert", fieldName, fieldFunc, field, value))
 		fields = append(fields, fieldName)
-		param = append(param, fmt.Sprintf(c.ArgFormat, len(args_)))
+		param = append(param, fmt.Sprintf(c.ArgFormat, len(updatedArgs)))
 	})
 	if c.Verbose {
-		c.Log(caller, "CRUD generate insert args by struct:%v,filter:%v, result is fields:%v,param:%v,args:%v", reflect.TypeOf(v), filter, fields, param, jsonString(args))
+		c.Log(caller, "CRUD generate insert args by struct:%v,filter:%v, result is fields:%v,param:%v,args:%v", reflect.TypeOf(v), filter, fields, param, jsonString(updatedArgs))
 	}
 	return
 }
@@ -795,46 +793,46 @@ func (c *CRUD) insertFilter(ctx context.Context, caller int, queryer any, v any,
 }
 
 // UpdateArgs generates the arguments for updating a record based on the provided value and filter.
-func UpdateArgs(v any, filter string, args []any) (table string, sets []string, args_ []any) {
-	table, sets, args_ = Default.updateArgs(1, v, filter, args)
+func UpdateArgs(v any, filter string, args []any) (table string, sets []string, updatedArgs []any) {
+	table, sets, updatedArgs = Default.updateArgs(1, v, filter, args)
 	return
 }
 
 // UpdateArgs generates the arguments for updating a record based on the provided value and filter.
-func (c *CRUD) UpdateArgs(v any, filter string, args []any) (table string, sets []string, args_ []any) {
-	table, sets, args_ = c.updateArgs(1, v, filter, args)
+func (c *CRUD) UpdateArgs(v any, filter string, args []any) (table string, sets []string, updatedArgs []any) {
+	table, sets, updatedArgs = c.updateArgs(1, v, filter, args)
 	return
 }
 
-func (c *CRUD) updateArgs(caller int, v any, filter string, args []any) (table string, sets []string, args_ []any) {
-	args_ = args
+func (c *CRUD) updateArgs(caller int, v any, filter string, args []any) (table string, sets []string, updatedArgs []any) {
+	updatedArgs = args
 	table = c.FilterFieldCall("update", v, filter, func(fieldName, fieldFunc string, field reflect.StructField, value any) {
-		args_ = append(args_, c.ParamConv("update", fieldName, fieldFunc, field, value))
-		sets = append(sets, fmt.Sprintf("%v="+c.ArgFormat, fieldName, len(args_)))
+		updatedArgs = append(updatedArgs, c.ParamConv("update", fieldName, fieldFunc, field, value))
+		sets = append(sets, fmt.Sprintf("%v="+c.ArgFormat, fieldName, len(updatedArgs)))
 	})
 	if c.Verbose {
-		c.Log(caller, "CRUD generate update args by struct:%v,filter:%v, result is sets:%v,args:%v", reflect.TypeOf(v), filter, sets, jsonString(args_))
+		c.Log(caller, "CRUD generate update args by struct:%v,filter:%v, result is sets:%v,args:%v", reflect.TypeOf(v), filter, sets, jsonString(updatedArgs))
 	}
 	return
 }
 
 // UpdateSQL generates the SQL statement for updating a record based on the provided value and filter.
-func UpdateSQL(v any, filter string, args []any, suffix ...string) (sql string, args_ []any) {
-	sql, args_ = Default.updateSQL(1, v, filter, args, suffix...)
+func UpdateSQL(v any, filter string, args []any, suffix ...string) (sql string, updatedArgs []any) {
+	sql, updatedArgs = Default.updateSQL(1, v, filter, args, suffix...)
 	return
 }
 
 // UpdateSQL generates the SQL statement for updating a record based on the provided value and filter.
-func (c *CRUD) UpdateSQL(v any, filter string, args []any, suffix ...string) (sql string, args_ []any) {
-	sql, args_ = c.updateSQL(1, v, filter, args, suffix...)
+func (c *CRUD) UpdateSQL(v any, filter string, args []any, suffix ...string) (sql string, updatedArgs []any) {
+	sql, updatedArgs = c.updateSQL(1, v, filter, args, suffix...)
 	return
 }
 
-func (c *CRUD) updateSQL(caller int, v any, filter string, args []any, suffix ...string) (sql string, args_ []any) {
-	table, sets, args_ := c.updateArgs(caller+1, v, filter, args)
+func (c *CRUD) updateSQL(caller int, v any, filter string, args []any, suffix ...string) (sql string, updatedArgs []any) {
+	table, sets, updatedArgs := c.updateArgs(caller+1, v, filter, args)
 	sql = fmt.Sprintf(`update %v set %v %v`, table, strings.Join(sets, ","), strings.Join(suffix, " "))
 	if c.Verbose {
-		c.Log(caller, "CRUD generate update sql by struct:%v,filter:%v, result is sql:%v,args:%v", reflect.TypeOf(v), filter, sql, jsonString(args_))
+		c.Log(caller, "CRUD generate update sql by struct:%v,filter:%v, result is sql:%v,args:%v", reflect.TypeOf(v), filter, sql, jsonString(updatedArgs))
 	}
 	return
 }
@@ -941,6 +939,7 @@ func UpdateFilter(ctx context.Context, queryer any, v any, filter string, where 
 	return
 }
 
+// UpdateFilter updates records in the database based on a filter and conditions, returning the number of affected rows.
 func (c *CRUD) UpdateFilter(ctx context.Context, queryer any, v any, filter string, where []string, sep string, args []any) (affected int64, err error) {
 	affected, err = c.updateFilter(ctx, 1, queryer, v, filter, where, sep, args)
 	return
@@ -988,6 +987,7 @@ func UpdateWheref(ctx context.Context, queryer any, v any, filter, formats strin
 	return
 }
 
+// UpdateWheref updates records in the database based on a filter and formatted conditions, returning the number of affected rows.
 func (c *CRUD) UpdateWheref(ctx context.Context, queryer any, v any, filter, formats string, args ...any) (affected int64, err error) {
 	affected, err = c.updateWheref(ctx, 1, queryer, v, filter, formats, args...)
 	return
@@ -1464,6 +1464,7 @@ func Query(ctx context.Context, queryer any, v any, filter, sql string, args []a
 	return
 }
 
+// Query executes a query on the database and scans the results into the provided value.
 func (c *CRUD) Query(ctx context.Context, queryer any, v any, filter, sql string, args []any, dest ...any) (err error) {
 	err = c.query(ctx, 1, queryer, v, filter, sql, args, dest...)
 	return
@@ -1531,16 +1532,19 @@ func QueryUnify(ctx context.Context, queryer any, v any) (err error) {
 	return
 }
 
+// QueryUnifyTarget executes a unified query on the database and scans the results into the provided value.
 func QueryUnifyTarget(ctx context.Context, queryer any, v any, target string) (err error) {
 	err = Default.queryUnify(ctx, 1, queryer, v, target)
 	return
 }
 
+// QueryUnify executes a unified query on the database and scans the results into the provided value.
 func (c *CRUD) QueryUnify(ctx context.Context, queryer any, v any) (err error) {
 	err = c.queryUnify(ctx, 1, queryer, v, "Query")
 	return
 }
 
+// QueryUnifyTarget executes a unified query on the database and scans the results into the provided value.
 func (c *CRUD) QueryUnifyTarget(ctx context.Context, queryer any, v any, target string) (err error) {
 	err = c.queryUnify(ctx, 1, queryer, v, target)
 	return
@@ -1721,6 +1725,7 @@ func (c *CRUD) queryRowUnify(ctx context.Context, caller int, queryer any, v any
 	return
 }
 
+// CountSQL generates a SQL count query based on the provided value and filter.
 func CountSQL(v any, filter string, suffix ...string) (sql string) {
 	sql = Default.countSQL(1, v, "", filter, suffix...)
 	return
@@ -1968,19 +1973,19 @@ func (c *CRUD) applyUnify(ctx context.Context, caller int, queryer any, v any, e
 	isEnabled := func(key string) bool {
 		return len(enabledAll) < 1 || enabledAll.HavingOne(key)
 	}
-	if value := reflectValue.FieldByName("Query"); value.IsValid() && err == nil && isEnabled("Query") {
+	if value := reflectValue.FieldByName("Query"); value.IsValid() && isEnabled("Query") {
 		enabled := value.FieldByName("Enabled")
 		if !enabled.IsValid() || (enabled.IsValid() && enabled.Bool()) {
 			err = c.queryUnify(ctx, caller+1, queryer, v, "Query")
 		}
 	}
-	if value := reflectValue.FieldByName("QueryRow"); value.IsValid() && err == nil && isEnabled("QueryRow") {
+	if value := reflectValue.FieldByName("QueryRow"); value.IsValid() && isEnabled("QueryRow") {
 		enabled := value.FieldByName("Enabled")
 		if !enabled.IsValid() || (enabled.IsValid() && enabled.Bool()) {
 			err = c.queryRowUnify(ctx, caller+1, queryer, v, "QueryRow")
 		}
 	}
-	if value := reflectValue.FieldByName("Count"); value.IsValid() && err == nil && isEnabled("Count") {
+	if value := reflectValue.FieldByName("Count"); value.IsValid() && isEnabled("Count") {
 		enabled := value.FieldByName("Enabled")
 		if !enabled.IsValid() || (enabled.IsValid() && enabled.Bool()) {
 			err = c.countUnify(ctx, caller+1, queryer, v, "Count")

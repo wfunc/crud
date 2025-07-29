@@ -94,12 +94,12 @@ type TestCrudQueryer struct {
 	Queryer Queryer
 }
 
-func (t *TestCrudQueryer) CrudExec(ctx context.Context, query string, args ...any) (insertId, affected int64, err error) {
-	insertId, affected, err = t.Queryer.Exec(ctx, query, args...)
+func (t *TestCrudQueryer) CrudExec(ctx context.Context, query string, args ...any) (insertID, affected int64, err error) {
+	insertID, affected, err = t.Queryer.Exec(ctx, query, args...)
 	return
 }
-func (t *TestCrudQueryer) CrudExecRow(ctx context.Context, query string, args ...any) (insertId int64, err error) {
-	insertId, err = t.Queryer.ExecRow(ctx, query, args...)
+func (t *TestCrudQueryer) CrudExecRow(ctx context.Context, query string, args ...any) (insertID int64, err error) {
+	insertID, err = t.Queryer.ExecRow(ctx, query, args...)
 	return
 }
 func (t *TestCrudQueryer) CrudQuery(ctx context.Context, query string, args ...any) (rows Rows, err error) {

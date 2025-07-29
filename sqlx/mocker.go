@@ -10,7 +10,10 @@ import (
 	"github.com/wfunc/util/xmap"
 )
 
+// ErrMock is the error returned when a mock is triggered.
 var ErrMock = fmt.Errorf("mock error")
+
+// Verbose indicates whether to print verbose output during mocking.
 var Verbose = false
 
 var mocking = false
@@ -44,15 +47,18 @@ func mockerCheck(key, sql string) (err error) {
 	return
 }
 
+// MockerStart starts the mocking process.
 func MockerStart() {
 	mocking = true
 }
 
+// MockerStop stops the mocking process and clears the mock state.
 func MockerStop() {
 	MockerClear()
 	mocking = false
 }
 
+// MockerClear clears the mock state, resetting all triggers and matches.
 func MockerClear() {
 	mockRunnedLck.Lock()
 	mockTrigger = map[string][]int{}
@@ -79,26 +85,31 @@ func mockerSet(key, match string, isPanice bool, triggers ...int) {
 	mockPanic = isPanice
 }
 
+// MockerCaller is a struct that holds the call function and shoulder for mocking.
 type MockerCaller struct {
 	Call     func(func(trigger int) (res xmap.M, err error)) xmap.M
 	Shoulder xmap.Shoulder
 }
 
+// Should is a method to set expectations for the mock.
 func (m *MockerCaller) Should(t *testing.T, args ...any) *MockerCaller {
 	m.Shoulder.Should(t, args...)
 	return m
 }
 
+// ShouldError is a method to set expectations for the mock to return an error.
 func (m *MockerCaller) ShouldError(t *testing.T) *MockerCaller {
 	m.Shoulder.ShouldError(t)
 	return m
 }
 
+// OnlyLog is a method to set whether the mock should only log the call without executing it.
 func (m *MockerCaller) OnlyLog(only bool) *MockerCaller {
 	m.Shoulder.OnlyLog(only)
 	return m
 }
 
+// Should is a method to set expectations for the mock.
 func Should(t *testing.T, key string, v any) (caller *MockerCaller) {
 	caller = &MockerCaller{}
 	caller.Should(t, key, v).Call = func(call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -137,22 +148,27 @@ func rangeArgs(args []any, call func(key string, trigger int)) {
 	}
 }
 
+// MockerSet sets a mock for a specific key with optional triggers.
 func MockerSet(key string, trigger int) {
 	mockerSet(key, "", false, trigger)
 }
 
+// MockerPanic sets a mock for a specific key that will panic when triggered.
 func MockerPanic(key string, trigger int) {
 	mockerSet(key, "", true, trigger)
 }
 
+// MockerMatchSet sets a mock for a specific key with a regex match.
 func MockerMatchSet(key, match string) {
 	mockerSet(key, match, false)
 }
 
+// MockerMatchPanic sets a mock for a specific key that will panic when the regex match is triggered.
 func MockerMatchPanic(key, match string) {
 	mockerSet(key, match, true)
 }
 
+// MockerSetCall sets a mock for a specific key with multiple triggers.
 func MockerSetCall(args ...any) (caller *MockerCaller) {
 	caller = &MockerCaller{}
 	caller.Call = func(call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -167,6 +183,7 @@ func MockerSetCall(args ...any) (caller *MockerCaller) {
 	return
 }
 
+// MockerPanicCall sets a mock for a specific key that will panic when triggered.
 func MockerPanicCall(args ...any) (caller *MockerCaller) {
 	caller = &MockerCaller{}
 	caller.Call = func(call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -181,6 +198,7 @@ func MockerPanicCall(args ...any) (caller *MockerCaller) {
 	return
 }
 
+// MockerMatchSetCall sets a mock for a specific key with a regex match and allows for a call function.
 func MockerMatchSetCall(key, match string) (caller *MockerCaller) {
 	caller = &MockerCaller{}
 	caller.Call = func(call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -193,6 +211,7 @@ func MockerMatchSetCall(key, match string) (caller *MockerCaller) {
 	return
 }
 
+// MockerMatchPanicCall sets a mock for a specific key with a regex match that will panic when triggered.
 func MockerMatchPanicCall(key, match string) (caller *MockerCaller) {
 	caller = &MockerCaller{}
 	caller.Call = func(call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -205,6 +224,7 @@ func MockerMatchPanicCall(key, match string) (caller *MockerCaller) {
 	return
 }
 
+// MockerSetRangeCall sets a mock for a specific key with a range of triggers.
 func MockerSetRangeCall(key string, start, end int) (caller *MockerCaller) {
 	caller = &MockerCaller{}
 	caller.Call = func(call func(trigger int) (res xmap.M, err error)) xmap.M {
@@ -219,6 +239,7 @@ func MockerSetRangeCall(key string, start, end int) (caller *MockerCaller) {
 	return
 }
 
+// MockerPanicRangeCall sets a mock for a specific key that will panic when triggered within a range.
 func MockerPanicRangeCall(key string, start, end int) (caller *MockerCaller) {
 	caller = &MockerCaller{}
 	caller.Call = func(call func(trigger int) (res xmap.M, err error)) xmap.M {

@@ -33,8 +33,8 @@ type Queryer interface {
 	QueryRow(ctx context.Context, query string, args ...any) (row Row)
 }
 
-// CrudQueryer is an interface that extends Queryer with CRUD operations.
-type CrudQueryer interface {
+// ExtendedQueryer is an interface that extends Queryer with CRUD operations.
+type ExtendedQueryer interface {
 	CrudExec(ctx context.Context, query string, args ...any) (insertID, affected int64, err error)
 	CrudExecRow(ctx context.Context, query string, args ...any) (insertID int64, err error)
 	CrudQuery(ctx context.Context, query string, args ...any) (rows Rows, err error)
